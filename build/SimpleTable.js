@@ -260,7 +260,7 @@ var SimpleTable = function (_Component) {
                 config.onRowDoubleClick.call(_this, record, index, _extends({}, _this.props, _this.output), e);
               }
             }
-          }, sort))
+          }, props))
         )
       ),
       showPagination && _react2["default"].createElement(

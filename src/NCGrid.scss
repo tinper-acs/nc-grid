@@ -319,7 +319,7 @@ $pagination-active-color:#E14C46;
     display: flex;
     align-items: center;
     .no-data {
-      background: url(../../static/images/nodata.png) center center / contain no-repeat;
+      // background: url(../../static/images/nodata.png) center center / contain no-repeat;
       display: inline-block;
       height: 26px;
       width: 26px;
@@ -612,6 +612,7 @@ $pagination-active-color:#E14C46;
 		
 	}
 }
+//SimpleTable
 .lightapp-component-simpleTable {
   .simpleTable-component-paginationDiv {
     height: 50px;
@@ -631,5 +632,74 @@ $pagination-active-color:#E14C46;
   }
   .simpleTable-selected-row {
     background: #E4E4E4;
+  }
+}
+//CardTable
+.lightapp-component-cardTable {
+  &.lightapp-component-cardTable-close {
+    padding: 2px 8px 0 8px;
+    .light-tabs {
+      -webkit-box-shadow: 0px 0px 2px 0px rgba(0, 0, 0, 0.3);
+      box-shadow: 0px 0px 2px 0px rgba(0, 0, 0, 0.3);
+      border-radius: 3px;
+      background: #fff;
+      position: relative;
+      z-index: 10;
+      .light-tabs-header .light-tabs-angle .table-tabs-icon:before {
+        left: 12px;
+      }
+    }
+  }
+}
+.light-tabs-header {
+  height: 100%;
+  padding-left: 12px;
+  padding-right: 20px;
+  .light-tabs-angle {
+    height: 100%;
+    line-height: 20px;
+    margin-right: 10px;
+    cursor: pointer;
+    color: #292e35;
+    padding-left: 11px;
+    .table-tabs-icon {
+      font-family: "uf";
+      display: inline-block;
+      &:before {
+        position: absolute;
+        top: 10px;
+        left: 20px;
+        color: #555;
+        font-size: 13px;
+      }
+    }
+  }
+  .tabs-wraps > li{
+    a {
+      line-height: 40px;
+      color: #555;
+      display: block;
+      height: 38px;
+    }
+  }
+}
+
+/**布局类**/
+.fl {
+  float: left;
+}
+.fr {
+  float: right;
+}
+.cf {
+  //解决高度塌陷
+  *zoom: 1;
+  &:before,
+  &:after {
+    display: table;
+    content: " ";
+  }
+  &:after {
+    clear: both;
   }
 }

@@ -4,13 +4,10 @@ import Table from 'bee-table';
 import bigData from 'bee-table/build/lib/bigData';
 //import Nodata from './noData';
 import dragColumn from 'bee-table/build/lib/dragColumn.js';
-// import { getPlatformLang } from '../../Page/GetMultiLang';
 import myBrowser from '../utils';
 
 const DragTable = dragColumn(Table);
 const BigDataTable = bigData(DragTable);
-// require('bee-table/build/Table.css');
-// require('./index.less');
 
 export default class NCTable extends Component {
   constructor(props) {

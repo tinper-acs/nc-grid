@@ -47,3 +47,46 @@ export function getSortColums({ colums, sortObj }) {
   });
 }
   
+/* 检测类型是否为数组 */
+export function isArray(param) {
+  return Object.prototype.toString.call(param).slice(8, -1) === 'Array';
+}
+
+/* 检测类型是否为字符串 */
+export function isString(param) {
+  return Object.prototype.toString.call(param).slice(8, -1) === 'String';
+}
+
+/* 检测类型是否为函数 */
+export function isFunction(param) {
+  return Object.prototype.toString.call(param).slice(8, -1) === 'Function';
+}
+
+/**
+ * 控制主表的收起展开
+ * @param  tableId   meta的id号
+ * @param  flag      flag:true/false 是否显示
+ */
+export function toggleCardTable(tableId, flag = false) {
+  const isArr = Array.isArray(tableId);
+  if (typeof tableId == 'string' || isArr) {
+    tableId = isArr ? tableId : [tableId];
+    tableId.forEach(item => {
+      if (this.myTable[item]) {
+        this.myTable[item].state.table.showMore = flag;
+        this.myTable[item].setState({
+          table: this.myTable[item].state.table
+        });
+      }
+    });
+    return false;
+  }
+  return false;
+}
+
+// 检测是否有一个含有key
+export function checkHasKey(arr, key) {
+  return arr.some(item => {
+    return item.dataIndex === key;
+  });
+}

@@ -5,6 +5,11 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports["default"] = myBrowser;
 exports.getSortColums = getSortColums;
+exports.isArray = isArray;
+exports.isString = isString;
+exports.isFunction = isFunction;
+exports.toggleCardTable = toggleCardTable;
+exports.checkHasKey = checkHasKey;
 /***
  * 获取当前浏览器类型
  */
@@ -55,5 +60,53 @@ function getSortColums(_ref) {
         }
       });
     }
+  });
+}
+
+/* 检测类型是否为数组 */
+function isArray(param) {
+  return Object.prototype.toString.call(param).slice(8, -1) === 'Array';
+}
+
+/* 检测类型是否为字符串 */
+function isString(param) {
+  return Object.prototype.toString.call(param).slice(8, -1) === 'String';
+}
+
+/* 检测类型是否为函数 */
+function isFunction(param) {
+  return Object.prototype.toString.call(param).slice(8, -1) === 'Function';
+}
+
+/**
+ * 控制主表的收起展开
+ * @param  tableId   meta的id号
+ * @param  flag      flag:true/false 是否显示
+ */
+function toggleCardTable(tableId) {
+  var _this = this;
+
+  var flag = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+  var isArr = Array.isArray(tableId);
+  if (typeof tableId == 'string' || isArr) {
+    tableId = isArr ? tableId : [tableId];
+    tableId.forEach(function (item) {
+      if (_this.myTable[item]) {
+        _this.myTable[item].state.table.showMore = flag;
+        _this.myTable[item].setState({
+          table: _this.myTable[item].state.table
+        });
+      }
+    });
+    return false;
+  }
+  return false;
+}
+
+// 检测是否有一个含有key
+function checkHasKey(arr, key) {
+  return arr.some(function (item) {
+    return item.dataIndex === key;
   });
 }

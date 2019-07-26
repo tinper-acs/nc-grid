@@ -201,7 +201,7 @@ class SimpleTable extends Component {
                   config.onRowDoubleClick.call(_this, record, index, { ..._this.props, ..._this.output }, e);
                 }
               }}
-              {...sort}
+              {...props}
             />
           </div>
         </div>
