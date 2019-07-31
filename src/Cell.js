@@ -4,7 +4,8 @@ import React, { Component } from 'react';
 // import { createEditableItem } from './create';
 // import { NCTooltip as Tooltip } from '../../base';
 import Tooltip from 'bee-tooltip';
-import FormControl from 'bee-form-control';
+import NCFormControl from './nc_FormControl';
+import Select from 'bee-select';
 import Item from './Item';
 // import linkTo from '../../api/linkTo';
 import CONFIG from './config';
@@ -13,13 +14,74 @@ import CONFIG from './config';
 //     changeTime,
 //     getLangCode,
 // } from '../../public';
-import { isObj,testType,isWrong,typeFormat,isBoolean,isNullOrVoid,formatAcuracy,ncRounding } from './utils';
+import { 
+    isObj,
+    testType,
+    isWrong,
+    typeFormat,
+    isBoolean,
+    isNullOrVoid,
+    formatAcuracy,
+    ncRounding,
+    undefinedOrfalse,
+    isString,
+    getDisplayByValue,
+    getChangedRowsOldValue
+} from './utils';
 import { setFocusRowIndex } from './api/getFocusRowIndex';
+
+const Option = Select.Option;
+// 表格侧拉编辑前siwtch类型的标识
+let switchContinue = true;
+// 表格侧拉编辑前checkbox_siwtch类型的标识
+let checkboxSwitchContinue = true;
+// 表格侧拉编辑前focus类型的标识
+let blurContinue = true;
 
 // @pureRender()
 export default class Cell extends Component {
     constructor(props) {
         super(props);
+        this.state = {
+            table: {
+                pageInfo: {
+                    pageSize: '10',
+                    pageIndex: '1'
+                },
+                rows: [],
+                checkedAll: false,
+                // 设置全选多选框的是否禁用
+                disabledAll: false,
+                model: false, //是否打开侧滑面板
+                origin: {},
+                operType: 'add',
+                allpks: []
+            },
+        };
+        this.batchData = null;
+    }
+    componentWillMount(){
+        let {tableInfo} = this.props;
+        this.setState({
+            table: tableInfo
+        })
+    }
+    /**
+     * 处理onchang和onblur时变化数据的格式
+     */
+    handleChangeData(itemtype, foolval, val, item) {
+        console.log('this.batchData',this.batchData);
+        switch (true) {
+        // 参照
+        case itemtype:
+            return foolval;
+        // 其他
+        default:
+            return {
+                value: val,
+                display: getDisplayByValue(val, item)
+            };
+        }
     }
     hanlder = () => {
         const { item, record, tableScope } = this.props;
@@ -84,12 +146,10 @@ export default class Cell extends Component {
         }
     };
     handleClick = () => {
+        let _this = this;
         const { values, item, config, record, pageScope, ICode, moduleId, disabled, metaDisabled, index } = this.props;
         setTimeout(() => {
-            pageScope.editTable.setClickRowIndex(moduleId, {
-                record: record,
-                index
-            });
+            _this.props.setClickRowIndex({record: record, index});
             if (disabled === 'off' || (!disabled && !metaDisabled)) {
                 // 如果当前单元格被禁用，就不渲染
                 if (config && typeof config.onBeforeEvent == 'function') {
@@ -240,7 +300,7 @@ export default class Cell extends Component {
         // 表格行数据
         const rows = this.state.table.rows;
         // 表格侧拉数据
-        const tableModeldata = pageScope.state.tableModeldata[moduleId];
+        // const tableModeldata = pageScope.state.tableModeldata[moduleId];
         return (
             <Item
                 content={{
@@ -292,26 +352,26 @@ export default class Cell extends Component {
                     // 适配多语 //这是最新适配的多语，可以了在放开 有问题看一下
                     if (item.itemtype === 'residtxt') {
                         if (model == 'open') {
-                        // 当侧拉的情况下
-                        Object.keys(valueChange).forEach(i => {
-                            if (tableModeldata.values[i]) {
-                            tableModeldata.values[i] = {
-                                ...tableModeldata.values[i],
-                                ...(valueChange[i] || {})
-                            };
-                            } else {
-                            tableModeldata.values[i] = valueChange[i] || {};
-                            }
-                            // 同步侧拉更改的数据到表体
-                            if (rows[index].values[i]) {
-                            rows[index].values[i] = {
-                                ...rows[index].values[i],
-                                ...(valueChange[i] || {})
-                            };
-                            } else {
-                            rows[index].values[i] = { ...(valueChange[i] || {}) };
-                            }
-                        }, this);
+                            // 当侧拉的情况下
+                            Object.keys(valueChange).forEach(i => {
+                                if (tableModeldata.values[i]) {
+                                tableModeldata.values[i] = {
+                                    ...tableModeldata.values[i],
+                                    ...(valueChange[i] || {})
+                                };
+                                } else {
+                                tableModeldata.values[i] = valueChange[i] || {};
+                                }
+                                // 同步侧拉更改的数据到表体
+                                if (rows[index].values[i]) {
+                                rows[index].values[i] = {
+                                    ...rows[index].values[i],
+                                    ...(valueChange[i] || {})
+                                };
+                                } else {
+                                rows[index].values[i] = { ...(valueChange[i] || {}) };
+                                }
+                            }, this);
                         } else {
                         // 当表体的情况下
                         Object.keys(valueChange).forEach(i => {
@@ -391,31 +451,31 @@ export default class Cell extends Component {
                     // 因为timepicker的value特殊，所以特殊转换一下end
         
                     // 处理单元格变化的数据zhnghengh
-                    let theValue = handleChangeData(item.itemtype === 'refer', foolValue, valueChange, item);
+                    let theValue = this.handleChangeData(item.itemtype === 'refer', foolValue, valueChange, item);
                     if (item.itemtype !== 'residtxt') {
                         // 多语文本暂时不支持批改
-                        pageScope.batchData[moduleId] = {
-                        // 在onchange时缓存列数据的key 和value  用于批量更改   zhanghengh 18/6/29
-                        batchChangeIndex: index,
-                        batchChangeKey: item.attrcode,
-                        batchChangeValue: isMul ? theValue : theValue.value,
-                        batchChangeDisplay: isMul ? null : theValue.display
+                        this.batchData = {
+                            // 在onchange时缓存列数据的key 和value  用于批量更改   zhanghengh 18/6/29
+                            batchChangeIndex: index,
+                            batchChangeKey: item.attrcode,
+                            batchChangeValue: isMul ? theValue : theValue.value,
+                            batchChangeDisplay: isMul ? null : theValue.display
                         };
                     } else {
                         // 多语批改
-                        pageScope.batchData[moduleId] = {
-                        batchChangeIndex: index,
-                        batchChangeKey: item.attrcode,
-                        batchChangeValue: valueChange,
-                        batchChangeDisplay: null
+                        this.batchData = {
+                            batchChangeIndex: index,
+                            batchChangeKey: item.attrcode,
+                            batchChangeValue: valueChange,
+                            batchChangeDisplay: null
                         };
                     }
                     if (item.itemtype !== 'residtxt') {
                         // 多语文本不走这里
                         if (model == 'open') {
-                        Object.assign(tableModeldata.values[item.attrcode], theValue);
+                            Object.assign(tableModeldata.values[item.attrcode], theValue);
                         } else {
-                        Object.assign(rows[index].values[item.attrcode], theValue);
+                            Object.assign(rows[index].values[item.attrcode], theValue);
                         }
                     }
         
@@ -428,7 +488,7 @@ export default class Cell extends Component {
         
                     if (unInputType) {
                         // 新的取旧值
-                        let initVal = getChangedRowsOldValue.call(pageScope, moduleId, index, item.attrcode);
+                        let initVal = getChangedRowsOldValue.call(this, moduleId, index, item.attrcode);
                         let isRefpk = _getValue(initVal);
                         if (isMul) {
                         if (valueChange.length > 0) {
@@ -556,7 +616,7 @@ export default class Cell extends Component {
                             ? null
                             : foolValue.vlaue
                         : valueChange;
-                        saveChangedRowsOldValue.call(pageScope, moduleId, index, item.attrcode, OldVal);
+                        saveChangedRowsOldValue.call(this, moduleId, index, item.attrcode, OldVal);
                     }
                     },
                     onOpenChange: val => {
@@ -619,275 +679,303 @@ export default class Cell extends Component {
                             this.setState({ table: this.state.table });
                         });
                         } else {
-                        pageScope.myTable[moduleId].verify[item.attrcode].DTOpen = true;
-                        this.setState({ table: this.state.table });
+                            pageScope.myTable[moduleId].verify[item.attrcode].DTOpen = true;
+                            this.setState({ table: this.state.table });
                         }
                     }
                     },
                     onFocus: (evt, event) => {
-                    // 新需求还有点问题，勿删
-                    // if (((!isLineStatus || item.itemtype === 'switch') && CONFIG.beforeFocusTypes.includes(item.itemtype))) {
-                    if (!isLineStatus && CONFIG.beforeFocusTypes.includes(item.itemtype)) {
-                        // 获取事件对象
-                        let target = (evt && evt.target) || (event && event.target) || event;
-                        // 侧拉编辑前回调
-                        if (config && typeof config.onBeforeEvent == 'function') {
-                        let isContinue = config.onBeforeEvent(
-                            { ...pageScope.props, ...pageScope.output },
-                            moduleId,
-                            item,
-                            index,
-                            record.values[item.attrcode],
-                            record
-                        );
-        
-                        // 用于处理侧拉框编辑前所要执行的函数
-                        const modelHanlder = (flag, target) => {
-                            if (!flag && target) {
-                            if (CONFIG.blurTypes.includes(item.itemtype) || item.itemtype === 'residtxt') {
-                                blurContinue = false;
+                        // 新需求还有点问题，勿删
+                        // if (((!isLineStatus || item.itemtype === 'switch') && CONFIG.beforeFocusTypes.includes(item.itemtype))) {
+                        if (!isLineStatus && CONFIG.beforeFocusTypes.includes(item.itemtype)) {
+                            // 获取事件对象
+                            let target = (evt && evt.target) || (event && event.target) || event;
+                            // 侧拉编辑前回调
+                            if (config && typeof config.onBeforeEvent == 'function') {
+                            let isContinue = config.onBeforeEvent(
+                                { ...pageScope.props, ...pageScope.output },
+                                moduleId,
+                                item,
+                                index,
+                                record.values[item.attrcode],
+                                record
+                            );
+            
+                            // 用于处理侧拉框编辑前所要执行的函数
+                            const modelHanlder = (flag, target) => {
+                                if (!flag && target) {
+                                    if (CONFIG.blurTypes.includes(item.itemtype) || item.itemtype === 'residtxt') {
+                                        blurContinue = false;
+                                    }
+                                    target.blur && target.blur();
+                                }
+                            };
+                            const type = testType(isContinue);
+                            let result = null;
+                            switch (type) {
+                                // true/flase
+                                case 'Boolean':
+                                    result = hanlderModelBeforeEvent(true, isContinue, null, modelHanlder, target);
+                                    break;
+                                // 返回的是async函数
+                                case 'AsyncFunction':
+                                    result = hanlderModelBeforeEvent(false, isContinue, false, modelHanlder, target);
+                                    break;
+                                // 返回的Promise对象
+                                case 'Promise':
+                                    result = hanlderModelBeforeEvent(false, isContinue, true, modelHanlder, target);
+                                    break;
+                                // 取Boolean值
+                                default:
+                                    result = hanlderModelBeforeEvent(true, !!isContinue, null, modelHanlder, target);
+                                    break;
                             }
-                            target.blur && target.blur();
+                            if (item.itemtype === 'refer') {
+                                // 这里就先这么处理了，侧拉批改会有问题
+                                return result;
                             }
-                        };
-                        const type = testType(isContinue);
-                        let result = null;
-                        switch (type) {
-                            // true/flase
-                            case 'Boolean':
-                            result = hanlderModelBeforeEvent(true, isContinue, null, modelHanlder, target);
-                            break;
-                            // 返回的是async函数
-                            case 'AsyncFunction':
-                            result = hanlderModelBeforeEvent(false, isContinue, false, modelHanlder, target);
-                            break;
-                            // 返回的Promise对象
-                            case 'Promise':
-                            result = hanlderModelBeforeEvent(false, isContinue, true, modelHanlder, target);
-                            break;
-                            // 取Boolean值
-                            default:
-                            result = hanlderModelBeforeEvent(true, !!isContinue, null, modelHanlder, target);
-                            break;
-                        }
-                        if (item.itemtype === 'refer') {
-                            // 这里就先这么处理了，侧拉批改会有问题
-                            return result;
-                        }
-                        if (item.itemtype === 'select') {
-                            result.then(value => {
-                            if (pageScope.myTable[moduleId].verify[item.attrcode].selectOpen) {
+                            if (item.itemtype === 'select') {
+                                result.then(value => {
+                                if (pageScope.myTable[moduleId].verify[item.attrcode].selectOpen) {
+                                    pageScope.myTable[moduleId].verify[item.attrcode].selectOpen = false;
+                                    this.setState({ table: this.state.table });
+                                } else {
+                                    pageScope.myTable[moduleId].verify[item.attrcode].selectOpen = value;
+                                    this.setState({ table: this.state.table });
+                                }
+                                });
+                            }
+                            } else {
+                            if (item.itemtype === 'select') {
+                                if (pageScope.myTable[moduleId].verify[item.attrcode].selectOpen) {
                                 pageScope.myTable[moduleId].verify[item.attrcode].selectOpen = false;
                                 this.setState({ table: this.state.table });
-                            } else {
-                                pageScope.myTable[moduleId].verify[item.attrcode].selectOpen = value;
+                                } else {
+                                pageScope.myTable[moduleId].verify[item.attrcode].selectOpen = true;
                                 this.setState({ table: this.state.table });
+                                }
                             }
-                            });
-                        }
-                        } else {
-                        if (item.itemtype === 'select') {
-                            if (pageScope.myTable[moduleId].verify[item.attrcode].selectOpen) {
-                            pageScope.myTable[moduleId].verify[item.attrcode].selectOpen = false;
-                            this.setState({ table: this.state.table });
-                            } else {
-                            pageScope.myTable[moduleId].verify[item.attrcode].selectOpen = true;
-                            this.setState({ table: this.state.table });
                             }
                         }
+            
+                        // 检验输入字符长度
+                        // if (isInputType && item.maxlength) {
+                        //     evt.target.isFlag = false;
+                        //     evt.target.addEventListener(
+                        //         'compositionstart',
+                        //         e => {
+                        //             e.target.isFlag = true;
+                        //         },
+                        //         false
+                        //     );
+                        //     evt.target.addEventListener(
+                        //         'compositionend',
+                        //         e => {
+                        //             e.target.isFlag = false;
+                        //             let flag = e.target.isFlag;
+                        //             let val = e.target.defaultValue;
+                        //             let arr = Array(val.length);
+                        //             let count = arr.length;
+                        //             arr.fill(1);
+                        //             val.replace(/[^\x00-\xff]/g, (a, b, c) => {
+                        //                 arr[b] = 2;
+                        //             });
+                        //             let reducer = arr.reduce((a, b) => {
+                        //                 if (a + b > item.maxlength) {
+                        //                     count--;
+                        //                 }
+                        //                 return a + b;
+                        //             }, 0);
+                        //             if (!flag && reducer > item.maxlength) {
+                        //                 val = val.substring(0, count);
+                        //                 rows[index].values[item.attrcode].value = val;
+                        //                 toast({
+                        //                     color: 'danger',
+                        //                     title: `${json && json['table_tips']}`,
+                        //                     content: `${json && json['table_tips_content']}${item.maxlength}`
+                        //                 });
+                        //                 e.target && e.target.blur();
+                        //             }
+                        //         },
+                        //         false
+                        //     );
+                        //     this.setState({ table: this.state.table });
+                        // }
+                        // 多语控件都不走这里
+                        if (item.itemtype !== 'residtxt') {
+                            // onFocus 和value  用于批量更改   zhanghengh 18/6/29 先注释，以后可能有用
+                            this.batchData = {
+                                batchChangeIndex: index,
+                                batchChangeKey: item.attrcode,
+                                batchChangeValue: record.values[item.attrcode] ? record.values[item.attrcode].value : '',
+                                batchChangeDisplay: record.values[item.attrcode] ? record.values[item.attrcode].display : ''
+                            };
                         }
-                    }
-        
-                    // 检验输入字符长度
-                    if (isInputType && item.maxlength) {
-                        evt.target.isFlag = false;
-                        evt.target.addEventListener(
-                        'compositionstart',
-                        e => {
-                            e.target.isFlag = true;
-                        },
-                        false
-                        );
-                        evt.target.addEventListener(
-                        'compositionend',
-                        e => {
-                            e.target.isFlag = false;
-                            let flag = e.target.isFlag;
-                            let val = e.target.defaultValue;
-                            let arr = Array(val.length);
-                            let count = arr.length;
-                            arr.fill(1);
-                            val.replace(/[^\x00-\xff]/g, (a, b, c) => {
-                            arr[b] = 2;
-                            });
-                            let reducer = arr.reduce((a, b) => {
-                            if (a + b > item.maxlength) {
-                                count--;
-                            }
-                            return a + b;
-                            }, 0);
-                            if (!flag && reducer > item.maxlength) {
-                            val = val.substring(0, count);
-                            rows[index].values[item.attrcode].value = val;
-                            toast({
-                                color: 'danger',
-                                title: `${json && json['table_tips']}`,
-                                content: `${json && json['table_tips_content']}${item.maxlength}`
-                            });
-                            e.target && e.target.blur();
-                            }
-                        },
-                        false
-                        );
-                        this.setState({ table: this.state.table });
-                    }
-                    // 多语控件都不走这里
-                    if (item.itemtype !== 'residtxt') {
-                        // onFocus 和value  用于批量更改   zhanghengh 18/6/29 先注释，以后可能有用
-                        pageScope.batchData[moduleId] = {
-                        batchChangeIndex: index,
-                        batchChangeKey: item.attrcode,
-                        batchChangeValue: record.values[item.attrcode] ? record.values[item.attrcode].value : '',
-                        batchChangeDisplay: record.values[item.attrcode] ? record.values[item.attrcode].display : ''
-                        };
-                    }
-        
-                    // 为了兼容refer，否则报错
-                    return new Promise(resolve => {
-                        resolve(true);
-                    });
+            
+                        // 为了兼容refer，否则报错
+                        return new Promise(resolve => {
+                            resolve(true);
+                        });
                     },
                     onMouseDown: () => {
-                    // 在这个方法里处理switch类型组件编辑前返回false的情况
-                    if (!isLineStatus && item.itemtype === 'switch') {
-                        // 如果当前单元格被禁用，就不渲染
-                        if (config && typeof config.onBeforeEvent == 'function') {
-                        let isContinue = config.onBeforeEvent(
-                            { ...pageScope.props, ...pageScope.output },
-                            moduleId,
-                            item,
-                            index,
-                            record.values[item.attrcode],
-                            record
-                        );
-        
-                        // 用于处理侧拉框编辑前所要执行的函数
-                        const modelHanlder = flag => {
-                            if (!flag) {
-                            if (item.itemtype === 'switch') {
-                                switchContinue = false;
+                        // 在这个方法里处理switch类型组件编辑前返回false的情况
+                        if (!isLineStatus && item.itemtype === 'switch') {
+                            // 如果当前单元格被禁用，就不渲染
+                            if (config && typeof config.onBeforeEvent == 'function') {
+                                let isContinue = config.onBeforeEvent(
+                                    { ...pageScope.props, ...pageScope.output },
+                                    moduleId,
+                                    item,
+                                    index,
+                                    record.values[item.attrcode],
+                                    record
+                                );
+                
+                                // 用于处理侧拉框编辑前所要执行的函数
+                                const modelHanlder = flag => {
+                                    if (!flag) {
+                                        if (item.itemtype === 'switch') {
+                                            switchContinue = false;
+                                        }
+                                    }
+                                };
+                                const type = testType(isContinue);
+                                let result = null;
+                                switch (type) {
+                                    // true/flase
+                                    case 'Boolean':
+                                        result = hanlderModelBeforeEvent(true, isContinue, null, modelHanlder);
+                                        break;
+                                    // 返回的是async函数
+                                    case 'AsyncFunction':
+                                        result = hanlderModelBeforeEvent(false, isContinue, false, modelHanlder);
+                                        break;
+                                    // 返回的Promise对象
+                                    case 'Promise':
+                                        result = hanlderModelBeforeEvent(false, isContinue, true, modelHanlder);
+                                        break;
+                                    // 取Boolean值
+                                    default:
+                                        result = hanlderModelBeforeEvent(true, !!isContinue, null, modelHanlder);
+                                        break;
+                                }
                             }
-                            }
-                        };
-                        const type = testType(isContinue);
-                        let result = null;
-                        switch (type) {
-                            // true/flase
-                            case 'Boolean':
-                            result = hanlderModelBeforeEvent(true, isContinue, null, modelHanlder);
-                            break;
-                            // 返回的是async函数
-                            case 'AsyncFunction':
-                            result = hanlderModelBeforeEvent(false, isContinue, false, modelHanlder);
-                            break;
-                            // 返回的Promise对象
-                            case 'Promise':
-                            result = hanlderModelBeforeEvent(false, isContinue, true, modelHanlder);
-                            break;
-                            // 取Boolean值
-                            default:
-                            result = hanlderModelBeforeEvent(true, !!isContinue, null, modelHanlder);
-                            break;
                         }
-                        }
-                    }
                     },
                     onBlur: val => {
-                    // 处理blur类型的组件，编辑前返回false，不可以在执行编辑后的问题
-                    if (!blurContinue) {
-                        blurContinue = true;
-                        return;
-                    }
-                    if (CONFIG.blurTypes.includes(item.itemtype)) {
-                        if (isString(val)) {
-                        val = val.trim();
+                        // 处理blur类型的组件，编辑前返回false，不可以在执行编辑后的问题
+                        if (!blurContinue) {
+                            blurContinue = true;
+                            return;
                         }
-                    }
-                    // 当数值类型只输入一个'-'的时候就将它赋值成0
-                    if (item.itemtype === 'number' && val === '-') {
-                        val = 0;
-                        rows[index].values[item.attrcode].value = 0;
-                    }
-                    if (item.itemtype === 'select') {
-                        pageScope.myTable[moduleId].verify[item.attrcode].selectOpen = false;
-                        this.setState({ table: this.state.table });
-                    }
-                    /*
-                    * onBlur编辑后 和 切换控件状态
-                    * 1、input类型    line   编辑后 + 切状态
-                    *                model  编辑后
-                    * 2、uninput类型  line   切状态
-                    *                model  无编辑后  无切状态
-                    */
-                    setTimeout(() => {
-                        // 处理input类型编辑后，ajax同步问题，以后好办法在改一下
-                        if (isInputType || item.itemtype == 'residtxt') {
-                        if (isLineStatus) {
-                            rows[index].values[item.attrcode].isEdit = false;
-                        }
-        
-                        const oldValue = getChangedRowsOldValue.call(pageScope, moduleId, index, item.attrcode);
-                        changedrows.push({
-                            rowid: record.rowid,
-                            newvalue: {
-                            value: val || ''
-                            },
-                            oldvalue: {
-                            value: oldValue ? (item.itemtype === 'number' ? formatAcuracy(oldValue, scaleData) : oldValue) : ''
+                        if (CONFIG.blurTypes.includes(item.itemtype)) {
+                            if (isString(val)) {
+                            val = val.trim();
                             }
-                        });
-                        saveChangedRowsOldValue.call(pageScope, moduleId, index, item.attrcode, val);
-                        if (item.itemtype === 'residtxt') {
-                            if (model == 'open') {
-                            // 当侧拉的情况下
-                            // 多语  登陆语言值 赋值给主语言
-                            tableModeldata.values[item.attrcode] = {
-                                ...tableModeldata.values[item.attrcode],
-                                value: val[item.attrcode].value
-                            };
-                            } else {
-                            // 当表体的情况下
-                            // 多语  登陆语言值 赋值给主语言
-                            let LangCode = getLangCode();
-                            let loginLang = item.languageMeta.filter(i => i.languageCode == LangCode);
-                            if (loginLang[0] && !record.values[item.attrcode].value) {
-                                loginLang[0].index = loginLang[0].index == '1' ? '' : loginLang[0].index;
-                                rows[index].values[item.attrcode] = {
-                                ...record.values[item.attrcode],
-                                ...record.values[item.attrcode + loginLang[0].index],
-                                isEdit: false
+                        }
+                        // 当数值类型只输入一个'-'的时候就将它赋值成0
+                        if (item.itemtype === 'number' && val === '-') {
+                            val = 0;
+                            rows[index].values[item.attrcode].value = 0;
+                        }
+                        if (item.itemtype === 'select') {
+                            pageScope.myTable[moduleId].verify[item.attrcode].selectOpen = false;
+                            this.setState({ table: this.state.table });
+                        }
+                        /*
+                        * onBlur编辑后 和 切换控件状态
+                        * 1、input类型    line   编辑后 + 切状态
+                        *                model  编辑后
+                        * 2、uninput类型  line   切状态
+                        *                model  无编辑后  无切状态
+                        */
+                        setTimeout(() => {
+                            // 处理input类型编辑后，ajax同步问题，以后好办法在改一下
+                            if (isInputType || item.itemtype == 'residtxt') {
+                            if (isLineStatus) {
+                                rows[index].values[item.attrcode].isEdit = false;
+                            }
+            
+                            const oldValue = getChangedRowsOldValue.call(this, moduleId, index, item.attrcode);
+                            changedrows.push({
+                                rowid: record.rowid,
+                                newvalue: {
+                                value: val || ''
+                                },
+                                oldvalue: {
+                                value: oldValue ? (item.itemtype === 'number' ? formatAcuracy(oldValue, scaleData) : oldValue) : ''
+                                }
+                            });
+                            saveChangedRowsOldValue.call(this, moduleId, index, item.attrcode, val);
+                            if (item.itemtype === 'residtxt') {
+                                if (model == 'open') {
+                                // 当侧拉的情况下
+                                // 多语  登陆语言值 赋值给主语言
+                                tableModeldata.values[item.attrcode] = {
+                                    ...tableModeldata.values[item.attrcode],
+                                    value: val[item.attrcode].value
                                 };
+                                } else {
+                                // 当表体的情况下
+                                // 多语  登陆语言值 赋值给主语言
+                                let LangCode = getLangCode();
+                                let loginLang = item.languageMeta.filter(i => i.languageCode == LangCode);
+                                if (loginLang[0] && !record.values[item.attrcode].value) {
+                                    loginLang[0].index = loginLang[0].index == '1' ? '' : loginLang[0].index;
+                                    rows[index].values[item.attrcode] = {
+                                    ...record.values[item.attrcode],
+                                    ...record.values[item.attrcode + loginLang[0].index],
+                                    isEdit: false
+                                    };
+                                }
+                                }
                             }
-                            }
-                        }
-        
-                        if (item.editAfterFlag) {
-                            pageScope.handleRelationItems({
-                            type: 'table',
-                            areaCode: moduleId,
-                            key: item.attrcode,
-                            changedrows,
-                            index,
-                            rowid: record.rowid,
-                            record: rows[index],
-                            callback: () => {
+            
+                            if (item.editAfterFlag) {
+                                pageScope.handleRelationItems({
+                                type: 'table',
+                                areaCode: moduleId,
+                                key: item.attrcode,
+                                changedrows,
+                                index,
+                                rowid: record.rowid,
+                                record: rows[index],
+                                callback: () => {
+                                    config &&
+                                    typeof config.onAfterEvent == 'function' &&
+                                    config.onAfterEvent(
+                                        {
+                                        ...pageScope.props,
+                                        ...pageScope.output
+                                        },
+                                        moduleId,
+                                        item.attrcode,
+                                        val,
+                                        changedrows,
+                                        index,
+                                        rows[index],
+                                        type,
+                                        'blur'
+                                    );
+                                    /***
+                                     * 二开的编辑后事件 --liuxis
+                                     */
+                                    let secFns = pageScope.NCCSecondDevelop;
+                                    secFns &&
+                                    secFns.onAfterEvent &&
+                                    secFns.onAfterEvent({
+                                        moduleId,
+                                        record: rows[index],
+                                        attrcode: item.attrcode,
+                                        methods: pageScope.output
+                                    });
+                                }
+                                });
+                            } else {
                                 config &&
                                 typeof config.onAfterEvent == 'function' &&
                                 config.onAfterEvent(
-                                    {
-                                    ...pageScope.props,
-                                    ...pageScope.output
-                                    },
+                                    { ...pageScope.props, ...pageScope.output },
                                     moduleId,
                                     item.attrcode,
                                     val,
@@ -910,76 +998,48 @@ export default class Cell extends Component {
                                     methods: pageScope.output
                                 });
                             }
-                            });
-                        } else {
+                            } else {
+                                if (isLineStatus && !isEmpty(rows)) {
+                                    rows[index].values[item.attrcode].isEdit = false;
+                                }
+                            }
+            
+                            // 多语控件都不走这里
+                            if (item.itemtype !== 'residtxt') {
+                                // 在onblur时缓存列数据的key 和value  用于批量更改   zhanghengh 18/6/29
+                                this.batchData = {
+                                    batchChangeIndex: index,
+                                    batchChangeKey: item.attrcode,
+                                    batchChangeValue: record.values[item.attrcode] ? record.values[item.attrcode].value : '',
+                                    batchChangeDisplay: record.values[item.attrcode] ? record.values[item.attrcode].display : ''
+                                };
+                            }
+            
+                            let isSwitch_browseDisabled = item.itemtype === 'switch_browse' && showDisable; // 开关且不可编辑
+                            let allRows = pageScope.editTable.getNumberOfRows(moduleId);
+                            /*
+                            * 增一行的条件：
+                            * 1、最后一行
+                            * 2、isAddRow 为true
+                            * 3、当前单元格值不为空
+                            */
+            
+                            if (
+                            allRows == index + 1 &&
                             config &&
-                            typeof config.onAfterEvent == 'function' &&
-                            config.onAfterEvent(
-                                { ...pageScope.props, ...pageScope.output },
-                                moduleId,
-                                item.attrcode,
-                                val,
-                                changedrows,
-                                index,
-                                rows[index],
-                                type,
-                                'blur'
-                            );
-                            /***
-                             * 二开的编辑后事件 --liuxis
-                             */
-                            let secFns = pageScope.NCCSecondDevelop;
-                            secFns &&
-                            secFns.onAfterEvent &&
-                            secFns.onAfterEvent({
-                                moduleId,
-                                record: rows[index],
-                                attrcode: item.attrcode,
-                                methods: pageScope.output
-                            });
-                        }
-                        } else {
-                        if (isLineStatus && !isEmpty(rows)) {
-                            rows[index].values[item.attrcode].isEdit = false;
-                        }
-                        }
-        
-                        // 多语控件都不走这里
-                        if (item.itemtype !== 'residtxt') {
-                        // 在onblur时缓存列数据的key 和value  用于批量更改   zhanghengh 18/6/29
-                        pageScope.batchData[moduleId] = {
-                            batchChangeIndex: index,
-                            batchChangeKey: item.attrcode,
-                            batchChangeValue: record.values[item.attrcode] ? record.values[item.attrcode].value : '',
-                            batchChangeDisplay: record.values[item.attrcode] ? record.values[item.attrcode].display : ''
-                        };
-                        }
-        
-                        let isSwitch_browseDisabled = item.itemtype === 'switch_browse' && showDisable; // 开关且不可编辑
-                        let allRows = pageScope.editTable.getNumberOfRows(moduleId);
-                        /*
-                        * 增一行的条件：
-                        * 1、最后一行
-                        * 2、isAddRow 为true
-                        * 3、当前单元格值不为空
-                        */
-        
-                        if (
-                        allRows == index + 1 &&
-                        config &&
-                        !!config.isAddRow &&
-                        !isSwitch_browseDisabled &&
-                        !isWrong(val) &&
-                        pageScope.state.meta[moduleId].status === 'edit'
-                        ) {
-                        // 添加自动增行后的回调
-                        const callback = isFunction(config.addRowCallback) ? config.addRowCallback : undefined;
-                        pageScope.editTable.addRow(moduleId, undefined, false, null, callback, true);
-                        } else {
-                        // 为了保证不是最后一行 渲染浏览态
-                        this.setState({ table: this.state.table });
-                        }
-                    }, 0);
+                            !!config.isAddRow &&
+                            !isSwitch_browseDisabled &&
+                            !isWrong(val) &&
+                            pageScope.state.meta[moduleId].status === 'edit'
+                            ) {
+                            // 添加自动增行后的回调
+                            const callback = isFunction(config.addRowCallback) ? config.addRowCallback : undefined;
+                            pageScope.editTable.addRow(moduleId, undefined, false, null, callback, true);
+                            } else {
+                            // 为了保证不是最后一行 渲染浏览态
+                            this.setState({ table: this.state.table });
+                            }
+                        }, 0);
                     }
                 }
                 }}
@@ -1027,10 +1087,10 @@ export default class Cell extends Component {
                 //     editItem = <ReferLoader />;
                 //     break;
                 case 'input': //编辑态
-                    editItem = <FormControl autoFocus={true} />;
+                    editItem = <NCFormControl size="sm" autoFocus={true} />;
                     break;
                 case 'label': //浏览态
-                    editItem = <FormControl autoFocus={true} isViewMode />;
+                    editItem = <NCFormControl size="sm" autoFocus={true} isViewMode />;
                     break;
                 // case 'number':
                 //     scale = isWrong(scale) || scale == '-1' ? +item.scale || 0 : scale;
@@ -1070,29 +1130,30 @@ export default class Cell extends Component {
                 //     value = record.values[item.attrcode].value ? moment(record.values[item.attrcode].value, 'hh:mm:ss') : null;
                 //     editItem = <NCTimepicker {...DTOpen} tableOpen={true} placeholder={item.placeholder || ''} format="HH:mm:ss" />;
                 //     break;
-                // case 'select':
-                //     let fixed =
-                //         model == 'open'
-                //         ? {
-                //             getPopupContainer: () => document.querySelector('#tableModal')
-                //             }
-                //         : {};
-                //     editItem = (
-                //         <Select
-                //         {...fixed}
-                //         {...selectOpen}
-                //         isTable={true}
-                //         dropdownClassName={NODE_ENV === 'test' && item.attrcode + '-' + 'select'}
-                //         >
-                //         {item.options.length &&
-                //             item.options.map((one, i) => (
-                //             <Option key={i} value={String(one.value)}>
-                //                 {` ${one.display} `}
-                //             </Option>
-                //             ))}
-                //         </Select>
-                //     );
-                //     break;
+                case 'select':
+                    let fixed =
+                        model == 'open'
+                        ? {
+                            getPopupContainer: () => document.querySelector('#tableModal')
+                            }
+                        : {};
+                    editItem = (
+                        <Select
+                        {...fixed}
+                        {...selectOpen}
+                        size="sm"
+                        isTable={true}
+                        // dropdownClassName={NODE_ENV === 'test' && item.attrcode + '-' + 'select'}
+                        >
+                        {item.options.length &&
+                            item.options.map((one, i) => (
+                            <Option key={i} value={String(one.value)}>
+                                {` ${one.display} `}
+                            </Option>
+                            ))}
+                        </Select>
+                    );
+                    break;
                 // case 'radio':
                 //     // 需要value
                 //     editItem = (
@@ -1198,179 +1259,173 @@ export default class Cell extends Component {
             tableScope,
             tableStatus
         } = this.props;
+        // console.log('IType: ',IType,'tableStatus: ',tableStatus)
         // 编辑态meta.status === 'edit' 且  不是label、customer类型  走编辑态   或者switch类型
         if ((!CONFIG.noEditType.includes(IType) && tableStatus === 'edit') || IType === 'switch_browse') {
-        // 新需求还有点问题，勿删
-        // if (isEdit || IType === "switch_browse" || IType === "checkbox_switch" || IType === "switch") {
-        if (isEdit || IType === 'switch_browse') {
-            return (
-            <div
-                className={'edit-table-edit-line ' + (config.multipleRowCell ? '' : 'single-line-and-ellipsis')}
-                tabindex="0"
-            >
-                {createEditableItem.call(tableScope, {
-                    moduleId,
-                    config,
-                    type: 'line',
-                    renderItem,
-                    item,
-                    index,
-                    value: typeFormat(value, item.itemtype),
-                    scale,
-                    disabled,
-                    record,
-                    model: model,
-                    status: tableStatus === 'edit',
-                    edittable_dom,
-                    pageScope
-                })}
-            </div>
-            );
-        } else {
-            // !isEdit渲染td的文字区域  小铅笔这里有点问题，之后看一下
-            let tableItemValue = this.handleBrowse.call(
-            tableScope,
-            IType,
-            display,
-            value,
-            scale,
-            ICode,
-            LanguageMeta,
-            values
-            );
-            return (
-            <div
-                style={IType === 'number' ? { textAlign: 'right' } : {}}
-                // onClick={e => {
-                // 之前在click写的切换状态时机
-                //   this.mousedown && this.handleClick(e);
-                //   this.mousedown = false;
-                // }}
-                onMouseDown={eve => {
-                    // 为了解决blur的比click快的问题，将切换状态时机改到onMouseDown中执行
-                    // 这里为了保持和在click中执行一样的效果, 所以将行点击事件中的逻辑在这里也写了一份，但是e不一样, 但是应该不会影响逻辑，所以将这里的e穿出去防止报错
-                    pageScope.editTable.focusRowByIndex(moduleId, index);
-                    if (config && typeof config.onRowClick === 'function') {
-                        config.onRowClick.call(
-                        pageScope,
-                        { ...pageScope.props, ...pageScope.output },
-                        moduleId,
-                        record,
-                        index,
-                        eve
-                        );
-                    }
-                    this.handleClick();
-                    eve.preventDefault();
-                }}
-                onFocus={e => {
-                    // 记录当前行，虽然表格以提供setClickRowIndex方法，但内部调用setState方法，如果tab切换频繁会导致效率问题因此用新的方法实现
-                    setFocusRowIndex(index);
-                    /*
-                    * issue: 当业务组通过代码自动执行focus时为防止死循环添加判断
-                    * resolve: 'sourceCapabilities' => which provides information about the physical device responsible for generating a touch event
-                    *           如果是我们内部的代码执行focus，先给聚焦的元素添加ncExecuteFocus属性，如果有此属性就执行click方法
-                    *           当前元素如果没有ncExecuteFocus就判断此事件是用户触发还是业务组的代码触发
-                    * */
-                    const sourceCapabilities = e.nativeEvent.sourceCapabilities;
-                    // sourceCapabilities ie 下不能支持
-                    if (e.target.ncExecuteFocus) {
-                        !this.mousedown && this.handleClick(e);
-                    } else {
-                        !this.mousedown && pageScope && pageScope.output.ViewModel.shouldAutoFocus && this.handleClick(e);
-                        pageScope && (pageScope.output.ViewModel.shouldAutoFocus = false);
-                    }
-                }}
-                tabindex={disabled === 'off' || (!disabled && !metaDisabled) ? '0' : '-1'}
-                className={'edit-table-edit-td ' + (config.multipleRowCell ? '' : 'single-line-and-ellipsis')}
-            >
-                {isWrong(tableItemValue) ? (
-                <span>
-                    {tableItemValue}
-                    &nbsp;
-                    {disabled === 'off' || (!disabled && !metaDisabled) ? (
-                    <span className="iconfont icon-zhengbiaobianji" />
-                    ) : (
-                    ''
-                    )}
-                </span>
-                ) : (
-                <div className={IType === 'number' ? 'text-left edit-center' : 'edit-center'}>
-                    <Tooltip className="tooltip-word-color" placement="top" delay={1} overlay={tableItemValue}>
-                    <span className={config.multipleRowCell ? '' : 'single-line-and-ellipsis'}>
-                        {tableItemValue}
-                        &nbsp;
-                    </span>
-                    </Tooltip>
-                    {disabled === 'off' || (!disabled && !metaDisabled) ? (
-                    <span className="iconfont icon-zhengbiaobianji1" />
-                    ) : (
-                    ''
-                    )}
-                </div>
-                )}
-            </div>
-            );
-        }
-        } else {
-        if (item.render && renderStatus === 'browse') {
-            // 浏览态，业务组重写render的判断 ，这里只是让他返回展示内容 添加允许重写render的状态判断，业务组需要加renderstatus进行判断
-            // 这里加了一个类名single-line-and-ellipsis， 让注册进来的render的内容也是一行省略的
-            return (
-            <Tooltip
-                className="tooltip-word-color"
-                placement="top"
-                delay={1}
-                overlay={item.render.call(null, text, record, index)}
-            >
-                <div
-                className={`customer-style ${config.multipleRowCell ? '' : 'single-line-and-ellipsis'}`}
-                style={IType === 'number' ? { textAlign: 'right' } : {}}
-                >
-                {item.render.call(null, text, record, index)}
-                </div>
-            </Tooltip>
-            );
-        } else {
-            let tableItemValue = this.handleBrowse.call(
-            tableScope,
-            IType,
-            display,
-            value,
-            scale,
-            ICode,
-            LanguageMeta,
-            values
-            );
-            return (
-            <div
-                className={'edit-table-browse ' + (config.multipleRowCell ? '' : 'single-line-and-ellipsis')}
-                style={IType === 'number' ? { textAlign: 'right' } : {}}
-            >
-                <Tooltip className="tooltip-word-color" placement="top" delay={1} overlay={tableItemValue}>
-                {// 如果模板里有hyperlinkflag:true
-                hyperlinkflag ? (
-                    <a
-                    href="javascript:;"
-                    onClick={() => {
-                        // 超链接跳转
-                        // linkTo(pageScope.state.meta.pageid, moduleId, ICode, value);
-                    }}
+            // 新需求还有点问题，勿删
+            // if (isEdit || IType === "switch_browse" || IType === "checkbox_switch" || IType === "switch") {
+            if (isEdit || IType === 'switch_browse') {
+                return (
+                    <div
+                        className={'edit-table-edit-line ' + (config.multipleRowCell ? '' : 'single-line-and-ellipsis')}
+                        tabindex="0"
                     >
-                    {tableItemValue}
-                    </a>
-                ) : (
-                    <span>{tableItemValue}</span>
-                )}
+                        {this.createEditableItem.call(this, {
+                            moduleId,
+                            config,
+                            type: 'line',
+                            renderItem,
+                            item,
+                            index,
+                            value: typeFormat(value, item.itemtype),
+                            scale,
+                            disabled,
+                            record,
+                            model: model,
+                            status: tableStatus === 'edit',
+                            edittable_dom,
+                            pageScope
+                        })}
+                    </div>
+                );
+            } else {
+                // !isEdit渲染td的文字区域  小铅笔这里有点问题，之后看一下
+                let tableItemValue = this.handleBrowse.call(
+                tableScope,
+                IType,
+                display,
+                value,
+                scale,
+                ICode,
+                LanguageMeta,
+                values
+                );
+                return (
+                    <div
+                        style={IType === 'number' ? { textAlign: 'right' } : {}}
+                        // onClick={e => {
+                        // 之前在click写的切换状态时机
+                        //   this.mousedown && this.handleClick(e);
+                        //   this.mousedown = false;
+                        // }}
+                        onMouseDown={eve => {
+                            // 为了解决blur的比click快的问题，将切换状态时机改到onMouseDown中执行
+                            // 这里为了保持和在click中执行一样的效果, 所以将行点击事件中的逻辑在这里也写了一份，但是e不一样, 但是应该不会影响逻辑，所以将这里的e穿出去防止报错
+                            this.props.focusRowByIndex.call(this,index);
+                            if (config && typeof config.onRowClick === 'function') {
+                                config.onRowClick.call(this, record, index, eve);
+                            }
+                            this.handleClick();
+                            eve.preventDefault();
+                        }}
+                        onFocus={e => {
+                            // 记录当前行，虽然表格以提供setClickRowIndex方法，但内部调用setState方法，如果tab切换频繁会导致效率问题因此用新的方法实现
+                            setFocusRowIndex(index);
+                            /*
+                            * issue: 当业务组通过代码自动执行focus时为防止死循环添加判断
+                            * resolve: 'sourceCapabilities' => which provides information about the physical device responsible for generating a touch event
+                            *           如果是我们内部的代码执行focus，先给聚焦的元素添加ncExecuteFocus属性，如果有此属性就执行click方法
+                            *           当前元素如果没有ncExecuteFocus就判断此事件是用户触发还是业务组的代码触发
+                            * */
+                            const sourceCapabilities = e.nativeEvent.sourceCapabilities;
+                            // sourceCapabilities ie 下不能支持
+                            if (e.target.ncExecuteFocus) {
+                                !this.mousedown && this.handleClick(e);
+                            } else {
+                                !this.mousedown && pageScope && pageScope.output.ViewModel.shouldAutoFocus && this.handleClick(e);
+                                // pageScope && (pageScope.output.ViewModel.shouldAutoFocus = false);
+                            }
+                        }}
+                        tabindex={disabled === 'off' || (!disabled && !metaDisabled) ? '0' : '-1'}
+                        className={'edit-table-edit-td ' + (config.multipleRowCell ? '' : 'single-line-and-ellipsis')}
+                    >
+                        {isWrong(tableItemValue) ? (
+                            <span>
+                                {tableItemValue}
+                                &nbsp;
+                                {disabled === 'off' || (!disabled && !metaDisabled) ? (
+                                <span className="iconfont icon-zhengbiaobianji" />
+                                ) : (
+                                ''
+                                )}
+                            </span>
+                        ) : (
+                            <div className={IType === 'number' ? 'text-left edit-center' : 'edit-center'}>
+                                <Tooltip className="tooltip-word-color" placement="top" delay={1} overlay={tableItemValue}>
+                                    <span className={config.multipleRowCell ? '' : 'single-line-and-ellipsis'}>
+                                        {tableItemValue}
+                                        &nbsp;
+                                    </span>
+                                </Tooltip>
+                                {disabled === 'off' || (!disabled && !metaDisabled) ? (
+                                    <span className="iconfont icon-zhengbiaobianji1" />
+                                    ) : (
+                                    ''
+                                )}
+                            </div>
+                        )}
+                    </div>
+                );
+            }
+        } else {
+            if (item.render && renderStatus === 'browse') {
+                // 浏览态，业务组重写render的判断 ，这里只是让他返回展示内容 添加允许重写render的状态判断，业务组需要加renderstatus进行判断
+                // 这里加了一个类名single-line-and-ellipsis， 让注册进来的render的内容也是一行省略的
+                return (
+                <Tooltip
+                    className="tooltip-word-color"
+                    placement="top"
+                    delay={1}
+                    overlay={item.render.call(null, text, record, index)}
+                >
+                    <div
+                    className={`customer-style ${config.multipleRowCell ? '' : 'single-line-and-ellipsis'}`}
+                    style={IType === 'number' ? { textAlign: 'right' } : {}}
+                    >
+                    {item.render.call(null, text, record, index)}
+                    </div>
                 </Tooltip>
-            </div>
-            );
-        }
+                );
+            } else {
+                let tableItemValue = this.handleBrowse.call(
+                tableScope,
+                IType,
+                display,
+                value,
+                scale,
+                ICode,
+                LanguageMeta,
+                values
+                );
+                return (
+                <div
+                    className={'edit-table-browse ' + (config.multipleRowCell ? '' : 'single-line-and-ellipsis')}
+                    style={IType === 'number' ? { textAlign: 'right' } : {}}
+                >
+                    <Tooltip className="tooltip-word-color" placement="top" delay={1} overlay={tableItemValue}>
+                    {// 如果模板里有hyperlinkflag:true
+                    hyperlinkflag ? (
+                        <a
+                        href="javascript:;"
+                        onClick={() => {
+                            // 超链接跳转
+                            // linkTo(pageScope.state.meta.pageid, moduleId, ICode, value);
+                        }}
+                        >
+                        {tableItemValue}
+                        </a>
+                    ) : (
+                        <span>{tableItemValue}</span>
+                    )}
+                    </Tooltip>
+                </div>
+                );
+            }
         }
     };
 
-  render() {
-    console.log('渲染cell');
-    return <div style={{ width: '100%' }}>{this._createContent()}</div>;
-  }
+    render() {
+        // console.log('渲染cell');
+        return <div style={{ width: '100%' }}>{this._createContent()}</div>;
+    }
 }

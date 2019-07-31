@@ -1,4 +1,5 @@
 import CONFIG from './config';
+import cloneDeep from 'clone-deep';
 /***
  * 获取当前浏览器类型
  */
@@ -23,6 +24,18 @@ export default function myBrowser() {
     if (!!window.ActiveXObject || 'ActiveXObject' in window) {
       return 'IE';
     }
+}
+
+/*
+ * @method   测试 不存在或者值为false 同等效力
+ * @author   add by yangguoqiang @18/03/19
+ * @params 
+ *     one     {any}
+ * @return   {boolean}       返回ture/false
+ * @demo     undefinedOrfalse('')
+ */
+export function undefinedOrfalse(one) {
+  return typeof one === 'undefined' || one === false;
 }
 
 // 处理多头排序标识
@@ -126,6 +139,13 @@ export function testType(origin) {
   return Object.prototype.toString.call(origin).slice(8, -1);
 }
 
+// 检测是否有一个含有numberindex
+export function checkHasIndex(arr) {
+  return arr.some(item => {
+    return item.attrcode == 'numberindex';
+  });
+}
+
 /**
  * 控制主表的收起展开
  * @param  tableId   meta的id号
@@ -155,6 +175,63 @@ export function checkHasKey(arr, key) {
   });
 }
 
+// 将科学计数法转成数字字符串
+export function convertNum(num_str) {
+  //参数必须为 字符串
+  //科学计数法字符 转换 为数字字符， 突破正数21位和负数7位的Number自动转换
+  // 兼容 小数点左边有多位数的情况，即 a×10^b（aEb），a非标准范围（1≤|a|<10）下的情况。如 3453.54E-6 or 3453.54E6
+  let resValue = '',
+    power = '',
+    result = null,
+    dotIndex = 0,
+    resArr = [],
+    sym = '';
+  let numStr = String(num_str);
+  if(!/e/i.test(numStr)) {
+    return numStr;
+  }
+  if (numStr[0] == '-') {
+    // 如果为负数，转成正数处理，先去掉‘-’号，并保存‘-’.
+    numStr = numStr.substr(1);
+    sym = '-';
+  }
+  let regExp = new RegExp('^(((\\d+.?\\d+)|(\\d+))[Ee]{1}((-(\\d+))|(\\d+)))$', 'ig');
+  result = regExp.exec(numStr);
+  if (result != null) {
+    resValue = result[2];
+    power = result[5];
+    result = null;
+  }
+  if (!resValue && !power) {
+    return false;
+  }
+  dotIndex = resValue.indexOf('.');
+  resValue = resValue.replace('.', '');
+  resArr = resValue.split('');
+  if (Number(power) >= 0) {
+    let subres = resValue.substr(dotIndex);
+    power = Number(power);
+    //幂数大于小数点后面的数字位数时，后面加0
+    for (let i = 0; i < power - subres.length; i++) {
+        resArr.push('0');
+    }
+    if (power - subres.length < 0) {
+        resArr.splice(dotIndex + power, 0, '.');
+    }
+  } else {
+    power = power.replace('-', '');
+    power = Number(power);
+    //幂数大于等于 小数点的index位置, 前面加0
+    for (let i = 0; i <= power - 1; i++) {
+        resArr.unshift('0');
+    }
+    let n = power - dotIndex >= 0 ? 1 : -(power - dotIndex);
+    resArr.splice(n, 0, '.');
+  }
+  resValue = resArr.join('');
+  return sym + resValue;
+}
+
 //精度 + 补0 + 千分位综合处理
 export function formatAcuracy(value, len = 0) {
   if (value === null || value === undefined || String(value).endsWith('必输项')) {
@@ -164,6 +241,86 @@ export function formatAcuracy(value, len = 0) {
   value = convertNum(value);
   return commafy(addZero(formatDot(value, len), len));
 }
+
+// 精度处理
+export function formatDot(value, len = 8) {
+  let formatVal, dotSplit, val;
+
+  val = (value || 0).toString();
+
+  dotSplit = val.split('.');
+
+  if (dotSplit.length > 2 || !value) {
+      return value;
+  }
+
+  if (val.indexOf('.') > -1) {
+      if (len == 0) {
+          formatVal = dotSplit[0];
+      } else {
+          formatVal = val.substring(0, val.indexOf('.') + len + 1);
+      }
+  } else {
+      formatVal = val;
+  }
+
+  return formatVal;
+}
+
+//数字转换成千分位 格式
+export function commafy(num) {
+  let pointIndex, intPart, pointPart;
+  if (num === '-') {
+      return '-';
+  }
+
+  if (Number.isNaN(+(num + '').split(',').join(''))) {
+      //这里暂时就处理一下千分位的逗号
+      return '';
+  }
+
+  num = num + '';
+  if (/^.*\..*$/.test(num)) {
+      pointIndex = num.lastIndexOf('.');
+      intPart = num.substring(0, pointIndex);
+      pointPart = num.substring(pointIndex + 1, num.length);
+      intPart = intPart + '';
+      let re = /(-?\d+)(\d{3})/;
+      while (re.test(intPart)) {
+          intPart = intPart.replace(re, '$1,$2');
+      }
+      num = intPart + '.' + pointPart;
+  } else {
+      num = num + '';
+      let re = /(-?\d+)(\d{3})/;
+      while (re.test(num)) {
+          num = num.replace(re, '$1,$2');
+      }
+  }
+  return num;
+}
+
+// 补0
+export const addZero = (num, scale) => {
+  if (num === '' || num === undefined || num === null) {
+      return '';
+  }
+
+  if (scale > 0) {
+      let start = String(num).split('.')[0];
+      let end = String(num).split('.')[1];
+      if (!end) {
+          end = '';
+      }
+      let len = end.length;
+      if (len < scale) {
+          end = end.padEnd(scale, '0');
+      }
+      return start + '.' + end;
+  } else {
+      return num;
+  }
+};
 
 // 四舍五入 by wangyang
 export function ncRounding(value, scale) {
@@ -209,4 +366,47 @@ export function ncRounding(value, scale) {
   }
 
   return _value;
+}
+
+// 深度拷贝
+export function deepClone(data) {
+  return cloneDeep(data);
+}
+
+export function getDisplayByValue(value, item) {
+  //新加个value !== undefined的容错  当清除select的时候防止报错
+  if (CONFIG.getDisplay.includes(item.itemtype) && Array.isArray(item.options) && value !== undefined) {
+    let { display } = item.options.filter(item => item.value == value)[0];
+    return display;
+  }
+  return undefined;
+}
+
+// 处理旧值函数
+export function saveChangedRowsOldValue(moduleId, index, attrcode, value) {
+  !Array.isArray(this.tableChangedRowsOldValue[moduleId]) && (this.tableChangedRowsOldValue[moduleId] = []);
+  !isObj(this.tableChangedRowsOldValue[moduleId][index]) && (this.tableChangedRowsOldValue[moduleId][index] = {});
+  this.tableChangedRowsOldValue[moduleId][index][attrcode] = value;
+}
+
+// 获取旧值函数
+export function getChangedRowsOldValue(moduleId, index, attrcode) {
+  let isArr = Array.isArray(this.tableChangedRowsOldValue[moduleId]);
+  if (!isArr || (isArr && !isObj(this.tableChangedRowsOldValue[moduleId][index]))) {
+    return null;
+  }
+  return this.tableChangedRowsOldValue[moduleId][index][attrcode] || null;
+}
+
+// 删除旧值函数
+export function delChangedRowsOldValue(moduleId, index, attrcode) {
+  let isArr = Array.isArray(this.tableChangedRowsOldValue[moduleId]);
+  if (!isArr || (isArr && !isObj(this.tableChangedRowsOldValue[moduleId][index]))) {
+    return;
+  }
+  if (attrcode) {
+    this.tableChangedRowsOldValue[moduleId][index][attrcode] = null;
+  } else {
+    this.tableChangedRowsOldValue[moduleId][index] = {};
+  }
 }

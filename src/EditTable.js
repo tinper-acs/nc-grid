@@ -9,18 +9,21 @@ import NCTable from './nc_Table';
 import Icon from 'bee-icon';
 import Select from 'bee-select';
 import Cell from './Cell';
-import { isFunction } from './utils';
+import { isFunction,checkHasIndex,deepClone,isWrong,isObj,typeFormat } from './utils';
 import sort from 'bee-table/build/lib/sort.js';
+import multiSelect from "bee-table/build/lib/multiSelect.js";
 
 const ComplexTable = sort(NCTable, Icon);
 
 const propTypes = {
     moduleId: PropTypes.string, //meta的id号
     config: PropTypes.object, //表格配置项
+    isEdit: PropTypes.bool, //true为编辑态
 }
 
 const defaultProps = {
     config: {},
+    isEdit: false
 }
 
 // 页面级别配置项
@@ -50,10 +53,42 @@ class EditTable extends Component {
                 operType: 'add',
                 allpks: []
             },
+            currentIndex: -1
         };
         // 是否获取到多语的标识，让cell正确更新
         this.isGetPlatform = false;
     }
+
+    componentWillMount(){
+        let {data} = this.props;
+        this.setState({ 
+            table: { ...this.state.table, rows: data } 
+        });
+    }
+    //为了回传Table的行数据
+    componentDidMount(){
+        let {onRef} = this.props;
+        onRef && onRef(this)
+    }
+    //获取表格数据时触发的回调函数
+    getTableRows = () => {
+        let {table:{rows}} = this.state;
+        let {getTableRows} = this.props;
+        getTableRows && getTableRows(rows);
+    }
+
+    /**把index行设置为选中行 */
+    focusRowByIndex(index) {
+        this.setState({
+            currentIndex: index
+        })
+    }
+    /**设置当前点击行 */
+    setClickRowIndex(record, index) {
+        let data = {record, index};
+        // this.table.currentInfo = data;
+    }
+
     /**
      * 创建 EditTable
      * @param {*} props 
@@ -61,20 +96,19 @@ class EditTable extends Component {
      * @param {*} isGetPlatform 
      */
     createEditTable(props, edittable_dom, isGetPlatform) {
-        let {columns} = props;
         // 分页显示最多按钮
         const MAX_BUTTONS = 5;
         // 获取table的meta信息 注意异步时候 meta中没有此id 为undefined
-        const { moduleId, config, pageScope } = props;
-        var meta = pageScope.state.meta[moduleId],
-            // columns,
-            { renderItem } = pageScope.state;
+        let { columns,moduleId, config, pageScope } = props;
+        let meta = {};
+        // let { renderItem } = pageScope.state;
+        let renderItem = {};
         // 将缓存的数据方法组件的state上
-        let myEditData = pageScope.myTableData.myEditData[moduleId];
-        if (myEditData) {
-            this.state.table = myEditData;
-            pageScope.myTableData.myEditData[moduleId] = null;
-        }
+        // let myEditData = pageScope.myTableData.myEditData[moduleId];
+        // if (myEditData) {
+        //     this.state.table = myEditData;
+        //     pageScope.myTableData.myEditData[moduleId] = null;
+        // }
         // if (!meta || meta.moduletype !== 'table') return;
         // 整体引用当前table数据
         let table = this.state.table;
@@ -109,11 +143,11 @@ class EditTable extends Component {
             table.statusChange = config.statusChange;
         }
         //侧拉面板data
-        let tableModeldata = pageScope.state.tableModeldata[moduleId] || {
-            rowid: String(new Date().getTime()).slice(-5) + Math.random().toString(12),
-            status: '0',
-            values: {}
-        };
+        // let tableModeldata = pageScope.state.tableModeldata[moduleId] || {
+        //     rowid: String(new Date().getTime()).slice(-5) + Math.random().toString(12),
+        //     status: '0',
+        //     values: {}
+        // };
     
         tablePageData.map((item, index) => {
             let values = item.values;
@@ -128,15 +162,15 @@ class EditTable extends Component {
             values.numberindex = { value: `${index / rowsLenght + 1}` };
         });
         // 去掉设置为隐藏的列
-        let tempColums = deepClone(meta.items.filter(item => !!item.visible));
+        let tempColums = deepClone(columns.filter(item => !!item.visible));
         const verify = {};
-        let stateVerify = pageScope.myTable[moduleId];
+        // let stateVerify = pageScope.myTable[moduleId];
     
         // 递归处理添加日期标识
-        setDTOpen(tempColums, verify, stateVerify);
+        // setDTOpen(tempColums, verify, stateVerify);
         // 日期控件编辑前处理加了DTOpen
-        pageScope.myTable[moduleId] = {};
-        pageScope.myTable[moduleId].verify = verify;
+        // pageScope.myTable[moduleId] = {};
+        // pageScope.myTable[moduleId].verify = verify;
     
         // 将有onBeforeEvent的时候存在数据上，以后有用的时候用
         if (config && config.onBeforeEvent && typeof config.onBeforeEvent == 'function') {
@@ -146,7 +180,7 @@ class EditTable extends Component {
         }
     
         // 序号开关 默认始终显示序号
-        if (config && config.showIndex && !checkHasIndex(meta.items) && json) {
+        if (config && config.showIndex && !checkHasIndex(columns) && json) {
             tempColums.unshift({
                 label: '序号',
                 title: '序号',
@@ -209,6 +243,7 @@ class EditTable extends Component {
                 );
             }
         };
+        {/* 
         // 合计行列配置
         let totalColums = gettotalColums(columns);
         // 合计行数据
@@ -233,95 +268,98 @@ class EditTable extends Component {
         });
         totalData[0].numberindex = json['table002'];
         }
-    
+        */}
         let fixed = table.checkboxFix ? {} : { fixed: 'left' };
+        {/* 
         let defaultColumns = [
-        {
-            title: (
-            <div>
-                <Checkbox
-                className="table-checkbox"
-                checked={checkedAll}
-                disabled={disabledAll}
-                indeterminate={indeterminate && !checkedAll}
-                tabindex="-1"
-                onChange={onAllCheckChange.bind(this, moduleId, config, pageScope)}
-                />
-            </div>
-            ),
-            key: 'checkbox',
-            dataIndex: 'checkbox',
-            className: 'table-checkbox-class',
-            visible: true,
-            itemtype: 'customer',
-            ...fixed,
-            width: '60px',
-            render: (text, record, index) => {
-            return {
-                children: (
+            {
+                title: (
                 <div>
                     <Checkbox
                     className="table-checkbox"
-                    checked={!!record.selected}
-                    disabled={!!record.disabled}
+                    checked={checkedAll}
+                    disabled={disabledAll}
+                    indeterminate={indeterminate && !checkedAll}
                     tabindex="-1"
-                    onChange={() => {
-                        onCheckboxChange.call(this, moduleId, text, record, index, config, pageScope);
-                    }}
-                    onMouseDown={e => {
-                        e.preventDefault();
-                    }}
-                    onClick={e => {
-                        // 阻止冒泡防止触发，表格行的click事件
-                        e.stopPropagation();
-                    }}
+                    onChange={onAllCheckChange.bind(this, moduleId, config, pageScope)}
                     />
                 </div>
                 ),
-                props: isFunction(config.merge) ? config.merge(index, 'checkbox') : {}
-            };
+                key: 'checkbox',
+                dataIndex: 'checkbox',
+                className: 'table-checkbox-class',
+                visible: true,
+                itemtype: 'customer',
+                ...fixed,
+                width: '60px',
+                render: (text, record, index) => {
+                return {
+                    children: (
+                    <div>
+                        <Checkbox
+                        className="table-checkbox"
+                        checked={!!record.selected}
+                        disabled={!!record.disabled}
+                        tabindex="-1"
+                        onChange={() => {
+                            onCheckboxChange.call(this, moduleId, text, record, index, config, pageScope);
+                        }}
+                        onMouseDown={e => {
+                            e.preventDefault();
+                        }}
+                        onClick={e => {
+                            // 阻止冒泡防止触发，表格行的click事件
+                            e.stopPropagation();
+                        }}
+                        />
+                    </div>
+                    ),
+                    props: isFunction(config.merge) ? config.merge(index, 'checkbox') : {}
+                };
+                }
             }
-        }
         ];
-        if (config && config.showCheck) {
-            columns = defaultColumns.concat(columns);
-        }
-        if (config && config.showCheck && (config.showTotal || getMetaIsTotal(totalColums)) && json) {
-        // 合并列增加字段
-        totalColums.unshift({
-            key: 'checkbox',
-            dataIndex: 'checkbox',
-            width: '60px',
-            fixed: 'left'
-        });
-        totalData[0].checkbox = json['table002'];
-        }
-        if (totalScale !== null) {
-        // 不展示合计行时不执行
-        finalTotalData = getFinalTotalData(totalData[0], totalScale);
-        }
+        */}
+        // if (config && config.showCheck) {
+        //     // columns = defaultColumns.concat(columns);
+        //     ComplexTable = multiSelect(ComplexTable,Checkbox);
+        // }
+        // if (config && config.showCheck && (config.showTotal || getMetaIsTotal(totalColums)) && json) {
+        //     // 合并列增加字段
+        //     totalColums.unshift({
+        //         key: 'checkbox',
+        //         dataIndex: 'checkbox',
+        //         width: '60px',
+        //         fixed: 'left'
+        //     });
+        //     totalData[0].checkbox = json['table002'];
+        // }
+        // if (totalScale !== null) {
+        //     // 不展示合计行时不执行
+        //     finalTotalData = getFinalTotalData(totalData[0], totalScale);
+        // }
         //添加侧滑面板的动画
         let animation = (model => {
-        let usual = {
-            mask: 'edit-table-modal-mask animated',
-            dialog: 'edit-table-modal-dialog animated'
-        };
-        switch (model) {
-            case 'origin':
+            let usual = {
+                mask: 'edit-table-modal-mask animated',
+                dialog: 'edit-table-modal-dialog animated'
+            };
+            switch (model) {
+                case 'origin':
+                    return usual;
+                    break;
+                case 'open':
+                    usual.mask += ' fadeIn';
+                    usual.dialog += ' slideInRight';
+                    break;
+                case 'close':
+                    usual.mask += ' fadeOut';
+                    usual.dialog += ' slideOutRight';
+                    break;
+                default:
+                    break;
+            }
             return usual;
-            break;
-            case 'open':
-            usual.mask += ' fadeIn';
-            usual.dialog += ' slideInRight';
-            break;
-            case 'close':
-            usual.mask += ' fadeOut';
-            usual.dialog += ' slideOutRight';
-            break;
-            default:
-            break;
-        }
-        return usual;
         })(model);
         let screenWidth = window.screen.width || 768;
         let rowHeight = 30; //--liuxis
@@ -362,13 +400,13 @@ class EditTable extends Component {
                     }`}
                 >
                     <ComplexTable
-                    rowKey="rowid"
+                    rowKey={props.rowKey ? props.rowKey : "rowid"}
                     height={config && !config.multipleRowCell && rowHeight}
                     headerHeight={_DEFAULT.isMultipleHead ? undefined : 30}
-                    ref={dom => (pageScope.primordialTable[moduleId] = findDOMNode(dom))}
-                    isTotal={!!((config && config.showTotal) || getMetaIsTotal(totalColums))}
-                    totalData={finalTotalData}
-                    totalColums={totalColums}
+                    // ref={dom => (pageScope.primordialTable[moduleId] = findDOMNode(dom))}
+                    // isTotal={!!((config && config.showTotal) || getMetaIsTotal(totalColums))}
+                    // totalData={finalTotalData}
+                    // totalColums={totalColums}
                     data={tablePageData}
                     columns={columns}
                     currentIndex={focusIndex}
@@ -385,31 +423,18 @@ class EditTable extends Component {
                     }}
                     onRowClick={(record, index, e) => {
                         // 行点击操作 1、根据index设置行样式 2、自定义点击事件
-                        pageScope.editTable.focusRowByIndex(moduleId, index);
-                        pageScope.editTable.setClickRowIndex(moduleId, {
-                        record,
-                        index
-                        });
+                        this.focusRowByIndex(index);
+                        this.setClickRowIndex(record, index);
                         if (config && typeof config.onRowClick === 'function') {
-                        config.onRowClick.call(
-                            pageScope,
-                            { ...pageScope.props, ...pageScope.output },
-                            moduleId,
-                            record,
-                            index,
-                            e
-                        );
+                            config.onRowClick.call(this,record,index,e);
                         }
                     }}
                     onRowDoubleClick={(record, index, e) => {
-                        pageScope.editTable.focusRowByIndex(moduleId, index);
-                        pageScope.editTable.setClickRowIndex(moduleId, {
-                        record,
-                        index
-                        });
+                        this.focusRowByIndex(index);
+                        this.setClickRowIndex(record, index);
                         // 行双击的方法 判断配置文件是否有，并且config.onRowDoubleClick是否是函数  zhanghengh 18/5/8
                         if (config && config.onRowDoubleClick && typeof config.onRowDoubleClick === 'function') {
-                        config.onRowDoubleClick.call(pageScope, record, index, { ...pageScope.props, ...pageScope.output }, e);
+                            config.onRowDoubleClick.call(this, record, index, e);
                         }
                     }}
                     // 是否取消滚动分页
@@ -599,9 +624,10 @@ class EditTable extends Component {
             sorter: Isorter, //自定义 sorter 
             headerClick //点击表头
         } = item;
+        let { isEdit } = this.props;
         let render;
         // 表格状态
-        let status = meta.status;
+        let status = isEdit ? 'edit' : 'browse';
         // 每个column单项的render函数
         if (IType === 'customer' && ICode !== 'numberindex') {
             render = item.render;
@@ -649,35 +675,38 @@ class EditTable extends Component {
                         hyperlinkflag={hyperlinkflag}
                         edittable_dom={edittable_dom}
                         isGetPlatform={isGetPlatform}
+                        tableInfo={this.state.table}
+                        focusRowByIndex={this.focusRowByIndex}
+                        setClickRowIndex={this.setClickRowIndex}
                     />
                 );
             };
         }
         // 缓存render，防止递归造成栈溢出
-        let newRender = render;
-        render = (text, record, index) => {
-            /**
-             * @desc 为了查找过程更快，把属性名设置成唯一的, 此属性用于自动聚焦
-             * @type {{[p: string]: string}}
-             * @author jinfjk
-             */
-            let hotKeyPrefix = CONFIG.hotKeyModuleIdPrefix;
-            let autoFocusIdentifier = {
-                [`${hotKeyPrefix}-${moduleId}-${ICode}-${index}`]: `${hotKeyPrefix}-${moduleId}-${ICode}-${index}`
-            };
-            // 给每个单元格添加上测试标记，不管什么状态
-            return {
-                children: (
-                <div
-                    {...autoFocusIdentifier}
-                    className={`${config && isFunction(config.setCellClass) && config.setCellClass(index, record, ICode)}`}
-                >
-                    {newRender(text, record, index)}
-                </div>
-                ),
-                props: isFunction(config.merge) ? config.merge(index, ICode) : {}
-            };
-        };
+        // let newRender = render;
+        // render = (text, record, index) => {
+        //     /**
+        //      * @desc 为了查找过程更快，把属性名设置成唯一的, 此属性用于自动聚焦
+        //      * @type {{[p: string]: string}}
+        //      * @author jinfjk
+        //      */
+        //     let hotKeyPrefix = CONFIG.hotKeyModuleIdPrefix;
+        //     let autoFocusIdentifier = {
+        //         [`${hotKeyPrefix}-${moduleId}-${ICode}-${index}`]: `${hotKeyPrefix}-${moduleId}-${ICode}-${index}`
+        //     };
+        //     // 给每个单元格添加上测试标记，不管什么状态
+        //     return {
+        //         children: (
+        //         <div
+        //             {...autoFocusIdentifier}
+        //             className={`${config && isFunction(config.setCellClass) && config.setCellClass(index, record, ICode)}`}
+        //         >
+        //             {newRender(text, record, index)}
+        //         </div>
+        //         ),
+        //         props: isFunction(config.merge) ? config.merge(index, ICode) : {}
+        //     };
+        // };
         let title = ((req, dis, color, sta) => {
             // req为true为必输  dis为false为可编辑
             return (
@@ -704,7 +733,7 @@ class EditTable extends Component {
             );
         })(IReq, metaDisabled, color, status === 'edit');
         item.title = (
-            <div className={`${ICode !== 'numberindex' ? 'title-container' : ''}`} {...testConfig}>
+            <div className={`${ICode !== 'numberindex' ? 'title-container' : ''}`}>
                 {title}
             </div>
         );
@@ -808,7 +837,7 @@ class EditTable extends Component {
     }
 
     render() {
-        console.log('渲染表格');
+        // console.log('渲染表格');
         let {
             moduleId = ''
         } = this.props;

@@ -12,6 +12,8 @@ $table-body-bg: #F6F6F6;
 $pagination-color:rgba(85,85,85,1);
 //分页按钮颜色
 $pagination-active-color:#E14C46;
+// 页面背景色
+$t-bgcolor: #f5f5f5;
 
 .u-table {
   width: 100%;
@@ -954,5 +956,245 @@ $pagination-active-color:#E14C46;
   }
   &:after {
     clear: both;
+  }
+}
+// EditTable
+.lightapp-component-editTable {
+  .nc-table {
+    > .u-table-content {
+      // zhanghengh start
+      .u-table-fixed-left .u-table-header tr:first-child th:first-child > div {
+        // initial 关键字ie并不支持  修改为left  --bbqin
+        // text-align: initial;
+        text-align: left;
+      }
+      .u-table-scroll,
+      .u-table-fixed-left {
+        .u-table-header {
+          tr:first-child th:first-child {
+            padding: 0 7px 0 20px !important;
+          }
+          tr:first-child th.table-checkbox-class {
+            padding: 0 7px 0 20px !important;
+            .u-checkbox {
+              margin: 0px;
+            }
+          }
+        }
+        .u-table-tbody tr td:first-child {
+          padding: 0 7px 0 20px;
+        }
+      }
+      .u-table-footer {
+        .total-row {
+          .u-table-scroll .u-table-tbody tr td:first-child {
+            padding: 0 7px 0 8px;
+          }
+          .u-table-tbody tr td:first-child {
+            padding: 0 7px 0 5px;
+          }
+          .u-table-body-inner {
+            margin-right: 0px;
+            overflow: hidden;
+          }
+        }
+      }
+      .u-table-fixed {
+        .u-table-tbody {
+          .u-table-row {
+            td.table-checkbox-class {
+              padding-left: 20px;
+            }
+          }
+        }
+      }
+    }
+  }
+  .multiple-head-border {
+    .u-table-content .u-table-thead tr th {
+      border: 1px solid #cdcdcd;
+      height: 26px;
+    }
+  }
+  // 分页样式
+  .editTable-component-paginationDiv {
+    height: 50px;
+    overflow: hidden; // 解决bfc
+    background-color: $t-bgcolor;
+    border-radius: 0 0 3px 3px;
+    padding: 0px 20px;
+    z-index: 10;
+    border-top: 1px solid #d9d9d9;
+    .NC_PaginationStyle {
+      float: right;
+    }
+    .fl {
+      line-height: 30px;
+    }
+    .u-select-selection-rendered {
+      margin: 0;
+    }
+
+    // 分页样式
+    .page-size {
+      .u-form-control-wrapper {
+        max-width: 100px;
+        margin-top: 5px;
+      }
+      .NC_total {
+        margin-left: 10px;
+        margin-top: 5px;
+        font-size: 12px !important;
+        color: #555555;
+      }
+
+      // 分页多选框样式
+      .u-select-selection {
+        width: 83px;
+        height: 28px;
+        color: #555555;
+        .u-select-selection-selected-value {
+          font-size: 12px !important;
+        }
+      }
+    }
+  }
+  // 处理表头排序图标错行问题
+  .title-container {
+    display: inline-block;
+    width: calc(100% - 23px);
+  }
+  //表头样式
+  .edittable-title {
+    //表头居中对齐
+    .title-vertical-center {
+      vertical-align: sub;
+      display: inline-block;
+      width: 100%;
+    }
+  }
+  .bee-table-column-sorter > span {
+    width: 17px !important;
+  }
+  // 处理表头排序图标透明度问题
+  .bee-table-column-sorter-flat {
+    opacity: 0.6 !important;
+  }
+
+  // 点击选中行颜色
+  .editTable-selected-row {
+    background: rgba(228, 228, 228, 1);
+  }
+  // 可编辑单元格样式
+  .table-index {
+    .edit-table-browse {
+      a,
+      span {
+        max-width: 100%;
+        margin-right: 0;
+      }
+    }
+  }
+  .edit-table-browse {
+    a,
+    span {
+      display: inline-block; //解决jg显示不全
+      max-width: 100%;
+      height: 17px;
+      line-height: 100%;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+    a {
+      text-decoration: none;
+    }
+  }
+
+  .single-line-and-ellipsis {
+    text-overflow: ellipsis;
+    -o-text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    display: block;
+  }
+  .edit-table-edit-line {
+    // 将参照高度在表格中改成28，防止错行
+    .refer-wrapper .refer {
+      height: 28px;
+    }
+  }
+  .customer-style {
+    a,
+    span {
+      display: inline-block;
+      max-width: 100%;
+    }
+    a {
+      text-decoration: none;
+    }
+  }
+  .edit-table-edit-td {
+    height: 100%;
+    .iconfont {
+      display: none;
+      font-weight: normal;
+      color: #058ae5;
+      font-size: 13px;
+    }
+  }
+  .edit-table-edit-td:hover {
+    > div {
+      display: flex;
+      align-items: center;
+    }
+    .text-left {
+      justify-content: flex-end;
+    }
+    .iconfont {
+      font-family: 'uf';
+      display: inline-block;
+      padding-left: 3px;
+      font-weight: normal;
+      color: #058ae5;
+      font-size: 14px;
+      &.icon-zhengbiaobianji1:before {
+        content: "\e69b";
+      }
+    }
+  }
+
+  // 必输星样式
+  .mark-required {
+    color: rgba(225, 76, 70, 1);
+  }
+
+  // 多表头样式
+  .parent-column {
+    text-align: center;
+  }
+  //清除ie右侧灰色滚动条
+  .clear-right-scrollBar {
+    .u-table-fixed-right,
+    .u-table-fixed-left {
+      .u-table-body-inner::-webkit-scrollbar-thumb:horizontal {
+        // zhanghengh  先注释了
+        //这里去掉合集行的chrom的滚动条先这样处理
+        background-color: transparent;
+      }
+      //liuming ie双滚动条问题
+      .u-table-body-inner {
+        scrollbar-arrow-color: #f6f6f6;
+        /*滚动条滑块按钮的颜色*/
+        scrollbar-face-color: #f6f6f6;
+        /*滚动条整体颜色*/
+        scrollbar-highlight-color: #f6f6f6;
+        /*滚动条阴影*/
+        scrollbar-shadow-color: #f6f6f6;
+        /*滚动条轨道颜色*/
+        scrollbar-track-color: #f6f6f6;
+      }
+    }
   }
 }

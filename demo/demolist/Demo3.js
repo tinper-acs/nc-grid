@@ -5,17 +5,28 @@
 *
 */
 import React, { Component } from 'react';
+import Button from 'bee-button';
 import NCGrid from '../../src';
 const EditTable = NCGrid.EditTable;
 
 const columns = [
+    {
+        itemtype: 'label', //label 类型不可编辑
+        maxlength: '20', //限制字段长度
+        visible: true, //是否显示列，设置为 false 或不设置，均不显示该列
+        width: '100px', //列宽
+        label: '行号', //列名称
+        disabled: true, //是否禁止编辑
+        attrcode: 'crowno' //字段名称
+    },
     {
         itemtype: 'label',
         maxlength: '20',
         label: '收入合同子实体',
         width: '200px',
         disabled: true,
-        required: true,
+        required: true, //是否必填，列名称前加 *
+        visible: true,
         attrcode: 'crevecontbid'
     },
     {
@@ -25,36 +36,8 @@ const columns = [
         visible: true,
         width: '200px',
         label: '数量',
+        required: true, 
         attrcode: 'npobnum'
-    },
-    {
-        itemtype: 'label',
-        maxlength: '20',
-        visible: true,
-        width: '200px',
-        label: '行号',
-        disabled: true,
-        attrcode: 'crowno'
-    },
-    {
-        itemtype: 'refer',
-        maxlength: '20',
-        width: '200px',
-        visible: true,
-        refcode: 'material',
-        label: '履约义务编码',
-        required: true,
-        attrcode: 'cpobid'
-    },
-    {
-        itemtype: 'refer',
-        maxlength: '100',
-        width: '200px',
-        visible: true,
-        label: '履约义务名称',
-        //required: true,
-        refcode: 'dept',
-        attrcode: 'cpobidvname'
     },
     {
         itemtype: 'select',
@@ -76,15 +59,6 @@ const columns = [
             }
         ],
         attrcode: 'fconfirmpoint'
-    },
-
-    {
-        itemtype: 'switch',
-        maxlength: '20',
-        width: '200px',
-        visible: true,
-        label: '是否启用',
-        attrcode: 'cunitid'
     },
     {
         itemtype: 'number',
@@ -111,7 +85,6 @@ const columns = [
         scale: '8',
         width: '200px',
         maxlength: '28',
-        visible: true,
         label: '已履约金额',
         disabled: true,
         attrcode: 'nfinishmny'
@@ -128,7 +101,6 @@ const columns = [
         itemtype: 'label',
         maxlength: '500',
         width: '200px',
-        visible: true,
         label: '行备注',
         disabled: true,
         attrcode: 'vrownote'
@@ -136,19 +108,252 @@ const columns = [
 ];
   
 const data = [
-    { a: "ASVAL_20190328", b: "小张", c: "男", d: "财务二科", e: "M1", key: "1" },
-    { a: "ASVAL_20190320", b: "小明", c: "男", d: "财务一科", e: "T1", key: "2" },
-    { a: "ASVAL_20190312", b: "小红", c: "女", d: "财务一科", e: "T2", key: "3" }
-];
+    {
+        status: '0',
+        rowid: 'hhghg-34343m43-434343wws',
+        values: {
+            ts: {
+                value: '2018-03-21 10:53:18'
+            },
+            crevecontid: {
+                value: '1001A310000000005SC8',
+            },
+            crevecontbid: {
+                value: '1001A310000000005SC9',
+            },
+            fclosetype: {
+                value: false,
+            },
+            nallotmny: {
+                value: '1199.000',
+            },
+            fallocation: {
+                value: false,
+            },
+            fconfirmpoint: {
+                value: 1,
+                display: '销售发货',
+            },
+            nfinishnum: {
+                value: 'gggg',
+            },
+            npobnum: {
+                value: '10888',
+            },
+            cpobid: {
+                value: '10,3',
+                display: '夏侯惇,白起',
+            },
+            cunitid: {
+                value: false,
+            },
+            crowno: {
+                value: 1
+            }
+        }
+    },
+    {
+        status: '0',
+        rowid: 'hhghg-344543243-434bbb3fdsf',
+        values: {
+            ts: {
+                value: '2018-03-21 10:53:18'
+            },
+            crevecontid: {
+                value: '1001A310000000005SC8'
+            },
+            crevecontbid: {
+                value: '1001A310000000005SC9'
+            },
+            fclosetype: {
+                value: false
+            },
+            nfinishnum: {
+                value: '哈哈哈'
+            },
+            nallotmny: {
+                value: '1199.000'
+            },
+            fallocation: {
+                value: false
+            },
+            fconfirmpoint: {
+                value: 1,
+                display: '销售发货'
+            },
+            npobnum: {
+                value: '10888'
+            },
+            cpobid: {
+                value: '10,3',
+                display: '广东,北京'
+            },
+            cunitid: {
+                value: true
+            },
+            crowno: {
+                value: 2
+            }
+        }
+    },
+    {
+        status: '0',
+        rowid: 'h2345hg-345hbvc43-434bebb3sdsc',
+        values: {
+            ts: {
+                value: '2018-03-21 10:53:18'
+            },
+            crevecontid: {
+                value: '1001A310000000005SC8'
+            },
+            crevecontbid: {
+                value: '1001A310000000005SC9'
+            },
+            fclosetype: {
+                value: false
+            },
+            nallotmny: {
+                value: '1199.000'
+            },
+            fallocation: {
+                value: false
+            },
+            fconfirmpoint: {
+                value: 1,
+                display: '销售发货'
+            },
+            nfinishnum: {
+                value: '1234'
+            },
+            npobnum: {
+                value: '10888'
+            },
+            cpobid: {
+                value: '10,3',
+                display: '中国,美国'
+            },
+            cunitid: {
+                value: true
+            },
+            crowno: {
+                value: 3
+            }
+        }
+    },
+    {
+        status: '0',
+        rowid: '5hhhg-345hbc43-434bebb3sddw',
+        values: {
+            ts: {
+                value: '2018-03-21 10:53:18'
+            },
+            crevecontid: {
+                value: '1001A310000000005SC8'
+            },
+            crevecontbid: {
+                value: '1001A310000000005SC9'
+            },
+            nfinishnum: {
+                value: 'ggefe'
+            },
+            fclosetype: {
+                value: false
+            },
+            nallotmny: {
+                value: '11955',
+                scale: '2',
+                disabled: false
+            },
+            fallocation: {
+                value: false
+            },
+            fconfirmpoint: {
+                value: 2,
+                display: '手工'
+            },
+            npobnum: {
+                value: '10.888',
+                scale: '6'
+            },
+            cpobid: {
+                value: 1,
+                display: '1'
+            },
+            cunitid: {
+                value: false
+            },
+            crowno: {
+                value: 4
+            }
+        }
+    },
+    {
+        status: '0',
+        rowid: 'hhghg-34343m143-4343431wwde',
+        values: {
+            ts: {
+                value: '2018-03-21 10:53:18'
+            },
+            crevecontid: {
+                value: '1001A310000000005SC8'
+            },
+            crevecontbid: {
+                value: '1001A310000000005SC9'
+            },
+            fclosetype: {
+                value: false
+            },
+            nallotmny: {
+                value: '1199.000'
+            },
+            fallocation: {
+                value: false
+            },
+            fconfirmpoint: {
+                value: 1,
+                display: '销售发货'
+            },
+            nfinishnum: {
+                value: 'gggg'
+            },
+            npobnum: {
+                value: '10888'
+            },
+            cpobid: {
+                value: '10,3',
+                display: '夏侯惇,白起'
+            },
+            cunitid: {
+                value: false
+            },
+            crowno: {
+                value: 5
+            }
+        }
+    },
+]
   
 class Demo3 extends Component {
+    handleClick = () => {
+        this.table.getTableRows();
+    }
+    //获取表格数据时返回的回调
+    getTableRows = (data) => {
+        console.log('保存数据',data);
+    }
     render () {
         return (
-            <EditTable
-            columns={columns}
-            data={data}
-            moduleId="body"
-            />
+            <div>
+                <Button colors="primary" onClick={this.handleClick} style={{marginBottom:'8px'}}>保存表格数据</Button>
+                <EditTable
+                columns={columns}
+                data={data}
+                moduleId="purchase"
+                isEdit={true}
+                onRef={(ref) => { this.table = ref; }} //获取EditTable组件实例
+                getTableRows={this.getTableRows}
+                />
+            </div>
         )
     }
 }

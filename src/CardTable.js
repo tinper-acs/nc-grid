@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import classnames from 'classnames';
 import FoldableTabs from './FoldableTabs';
 import SimpleTable from './SimpleTable';
+import EditTable from './EditTable';
 import {checkHasKey} from './utils';
 
 const propTypes = {
@@ -62,7 +63,9 @@ class CardTable extends Component {
             columns,
             data: dataRows,
             tabLists,
-            showListView
+            showListView,
+            isEdit,
+            ...otherProps
         } = this.props;
 
         let { status,showMore,activeKey,isMaximized } = this.state;
@@ -78,11 +81,18 @@ class CardTable extends Component {
                 key: code,
                 label: name,
                 render: () => (
-                    <SimpleTable
+                    // <SimpleTable
+                    // columns={columns}
+                    // data={dataRows}
+                    // multiSelect={config.showCheck}
+                    // bodyStyle={{minHeight:'auto'}}
+                    // />
+                    <EditTable
                     columns={columns}
                     data={dataRows}
-                    multiSelect={config.showCheck}
-                    bodyStyle={{minHeight:'auto'}}
+                    moduleId={moduleId}
+                    isEdit={isEdit}
+                    {...otherProps}
                     />
                 )
             };
