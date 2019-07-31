@@ -37,8 +37,10 @@ class Demo2 extends Component {
             tabLists={tabLists}
             moduleId="body"
             showMore={true}
+            showMax={true}
             config={{
                 showCheck: true, //是否开启多选功能
+                hideSwitch: () => false, //表格
             }}
             />
         )

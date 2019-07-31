@@ -31,6 +31,7 @@ class CardTable extends Component {
             status: 'browse', //browse(浏览态)、edit(编辑态)
             activeKey: '', //标识当前卡表的选中项
             showMore: props.showMore, //卡表是否展开
+            isMaximized: false, //是否最大化显示
         }
     }
 
@@ -48,6 +49,11 @@ class CardTable extends Component {
         this.setState({ showMore });
     }
 
+    //最大化多表中表格
+    openMaxTable = (isMaximized) => {
+        this.setState({ isMaximized })
+    }
+
     render(){
         let {
             showMax,
@@ -59,7 +65,7 @@ class CardTable extends Component {
             showListView
         } = this.props;
 
-        let { status,showMore,activeKey } = this.state;
+        let { status,showMore,activeKey,isMaximized } = this.state;
 
         let tabsOther = tabLists.map((item, index) => {
             let { code, items, name } = item;
@@ -90,7 +96,7 @@ class CardTable extends Component {
             >
             {/*主table区域*/}
             <div className="lightapp-component-cardTable-table">
-                {!showMax ? (
+                {!isMaximized ? (
                     <FoldableTabs
                         // pageScope={pageScope}
                         tableScope={this}
@@ -108,7 +114,9 @@ class CardTable extends Component {
                             // status === 'edit' && cellFocusAfterTabChange(item);
                         }}
                         showMore={showMore}
+                        isMaximized={isMaximized}
                         onHeadAngleToggle={this.onHeadAngleToggle}
+                        openMaxTable={this.openMaxTable}
                     />
                 ) : null}
             </div>
@@ -155,42 +163,43 @@ class CardTable extends Component {
                 document.querySelector('body')
             )} */}
             {/* 最大化区域  最终用portal改造 */}
-            {/* {ReactDOM.createPortal(
+            {ReactDOM.createPortal(
                 <section
                 className={classnames('card-table-max ', {
-                    scaleFromOrigin: !!showMax
+                    scaleFromOrigin: !!isMaximized
                 })}
                 >
-                {showMax ? (
+                {isMaximized ? (
                     <FoldableTabs
-                    pageScope={pageScope}
-                    moduleId={moduleId}
+                    // pageScope={pageScope}
                     tableScope={this}
-                    isEdit={this.state.status == 'edit'}
                     config={config}
+                    isEdit={status == 'edit'}
+                    moduleId={moduleId}
                     activeKey={activeKey}
                     tabs={tabsOther}
                     showListView={showListView}
-                    showMax={showMax}
                     rows={dataRows}
-                    expandedList={expandedList}
+                    // expandedList={expandedList}
                     handleTypeChange={item => {
-                        config && config.onTabChange && typeof config.onTabChange == 'function'
-                        ? config.onTabChange.call(pageScope, { ...pageScope.output }, moduleId, item)
-                        : (function() {})();
-                        onTypeChange.call(this, item);
-
-                        this.state.status === 'edit' && cellFocusAfterTabChange(item);
+                        this.onTypeChange(item);
+                        // 标签切换时，首个自动聚焦
+                        // status === 'edit' && cellFocusAfterTabChange(item);
                     }}
                     showMore={showMore}
-                    />
+                    isMaximized={isMaximized}
+                    onHeadAngleToggle={this.onHeadAngleToggle}
+                    openMaxTable={this.openMaxTable}
+                />
                 ) : null}
                 </section>,
                 document.querySelector('body')
-            )} */}
+            )}
             </main>  
         )
     }
 }
 
+CardTable.propTypes = propTypes;
+CardTable.defaultProps = defaultProps;
 export default CardTable;
