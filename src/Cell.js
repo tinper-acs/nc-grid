@@ -5,6 +5,7 @@ import React, { Component } from 'react';
 // import { NCTooltip as Tooltip } from '../../base';
 import Tooltip from 'bee-tooltip';
 import NCFormControl from './nc_FormControl';
+import InputNumber from 'bee-input-number';
 import Select from 'bee-select';
 import Item from './Item';
 // import linkTo from '../../api/linkTo';
@@ -26,6 +27,7 @@ import {
     undefinedOrfalse,
     isString,
     getDisplayByValue,
+    isEmpty,
     // getChangedRowsOldValue
 } from './utils';
 import { setFocusRowIndex } from './api/getFocusRowIndex';
@@ -627,7 +629,8 @@ export default class Cell extends Component {
                         /***
                          * 二开的编辑后事件 --liuxis
                          */
-                        let secFns = pageScope.NCCSecondDevelop;
+                        // let secFns = pageScope.NCCSecondDevelop;
+                        let secFns;
                         secFns &&
                             secFns.onAfterEvent &&
                             secFns.onAfterEvent({
@@ -909,7 +912,7 @@ export default class Cell extends Component {
                             rows[index].values[item.attrcode].value = 0;
                         }
                         if (item.itemtype === 'select') {
-                            pageScope.myTable[moduleId].verify[item.attrcode].selectOpen = false;
+                            // pageScope.myTable[moduleId].verify[item.attrcode].selectOpen = false;
                             this.setState({ table: this.state.table });
                         }
                         /*
@@ -1122,10 +1125,10 @@ export default class Cell extends Component {
                 case 'label': //浏览态
                     editItem = <NCFormControl size="sm" autoFocus={true} isViewMode />;
                     break;
-                // case 'number':
-                //     scale = isWrong(scale) || scale == '-1' ? +item.scale || 0 : scale;
-                //     editItem = <NCNumber autoFocus={true} />;
-                //     break;
+                case 'number':
+                    scale = isWrong(scale) || scale == '-1' ? +item.scale || 0 : scale;
+                    editItem = <InputNumber autoFocus={true} />;
+                    break;
                 // case 'textarea':
                 //     editItem = <NCTextArea autoFocus={true} style={{ height: '33px' }} />;
                 //     break;

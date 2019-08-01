@@ -5,6 +5,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.addZero = undefined;
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
 exports["default"] = myBrowser;
@@ -29,9 +31,7 @@ exports.commafy = commafy;
 exports.ncRounding = ncRounding;
 exports.deepClone = deepClone;
 exports.getDisplayByValue = getDisplayByValue;
-exports.saveChangedRowsOldValue = saveChangedRowsOldValue;
-exports.getChangedRowsOldValue = getChangedRowsOldValue;
-exports.delChangedRowsOldValue = delChangedRowsOldValue;
+exports.isEmpty = isEmpty;
 
 var _config = require('./config');
 
@@ -449,31 +449,55 @@ function getDisplayByValue(value, item) {
   return undefined;
 }
 
-// 处理旧值函数
-function saveChangedRowsOldValue(moduleId, index, attrcode, value) {
-  !Array.isArray(this.tableChangedRowsOldValue[moduleId]) && (this.tableChangedRowsOldValue[moduleId] = []);
-  !isObj(this.tableChangedRowsOldValue[moduleId][index]) && (this.tableChangedRowsOldValue[moduleId][index] = {});
-  this.tableChangedRowsOldValue[moduleId][index][attrcode] = value;
+//判断数组,对象,字符串是否为空
+function isEmpty(param) {
+  var result = false;
+
+  if ((typeof param === 'undefined' ? 'undefined' : _typeof(param)) === 'object') {
+    var hasvalue = false;
+    if (Array.isArray(param)) {
+      hasvalue = param.length !== 0;
+    } else {
+      for (var pro in param) {
+        hasvalue = true;
+        break;
+      }
+    }
+
+    result = !hasvalue;
+  } else if (typeof param === 'string') {
+    if (param === '') result = true;
+  } else if (param === undefined) {
+    result = true;
+  }
+  return result;
 }
 
-// 获取旧值函数
-function getChangedRowsOldValue(moduleId, index, attrcode) {
-  var isArr = Array.isArray(this.tableChangedRowsOldValue[moduleId]);
-  if (!isArr || isArr && !isObj(this.tableChangedRowsOldValue[moduleId][index])) {
-    return null;
-  }
-  return this.tableChangedRowsOldValue[moduleId][index][attrcode] || null;
-}
+// // 处理旧值函数
+// export function saveChangedRowsOldValue(moduleId, index, attrcode, value) {
+//   !Array.isArray(this.tableChangedRowsOldValue[moduleId]) && (this.tableChangedRowsOldValue[moduleId] = []);
+//   !isObj(this.tableChangedRowsOldValue[moduleId][index]) && (this.tableChangedRowsOldValue[moduleId][index] = {});
+//   this.tableChangedRowsOldValue[moduleId][index][attrcode] = value;
+// }
 
-// 删除旧值函数
-function delChangedRowsOldValue(moduleId, index, attrcode) {
-  var isArr = Array.isArray(this.tableChangedRowsOldValue[moduleId]);
-  if (!isArr || isArr && !isObj(this.tableChangedRowsOldValue[moduleId][index])) {
-    return;
-  }
-  if (attrcode) {
-    this.tableChangedRowsOldValue[moduleId][index][attrcode] = null;
-  } else {
-    this.tableChangedRowsOldValue[moduleId][index] = {};
-  }
-}
+// // 获取旧值函数
+// export function getChangedRowsOldValue(moduleId, index, attrcode) {
+//   let isArr = Array.isArray(this.tableChangedRowsOldValue[moduleId]);
+//   if (!isArr || (isArr && !isObj(this.tableChangedRowsOldValue[moduleId][index]))) {
+//     return null;
+//   }
+//   return this.tableChangedRowsOldValue[moduleId][index][attrcode] || null;
+// }
+
+// // 删除旧值函数
+// export function delChangedRowsOldValue(moduleId, index, attrcode) {
+//   let isArr = Array.isArray(this.tableChangedRowsOldValue[moduleId]);
+//   if (!isArr || (isArr && !isObj(this.tableChangedRowsOldValue[moduleId][index]))) {
+//     return;
+//   }
+//   if (attrcode) {
+//     this.tableChangedRowsOldValue[moduleId][index][attrcode] = null;
+//   } else {
+//     this.tableChangedRowsOldValue[moduleId][index] = {};
+//   }
+// }

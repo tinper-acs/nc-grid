@@ -67,7 +67,7 @@ const columns = [
         maxlength: '28',
         visible: true,
         label: '分配金额',
-        disabled: true,
+        // disabled: true,
         attrcode: 'nallotmny'
     },
     {

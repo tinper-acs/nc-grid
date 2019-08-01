@@ -382,31 +382,55 @@ export function getDisplayByValue(value, item) {
   return undefined;
 }
 
-// 处理旧值函数
-export function saveChangedRowsOldValue(moduleId, index, attrcode, value) {
-  !Array.isArray(this.tableChangedRowsOldValue[moduleId]) && (this.tableChangedRowsOldValue[moduleId] = []);
-  !isObj(this.tableChangedRowsOldValue[moduleId][index]) && (this.tableChangedRowsOldValue[moduleId][index] = {});
-  this.tableChangedRowsOldValue[moduleId][index][attrcode] = value;
+//判断数组,对象,字符串是否为空
+export function isEmpty(param) {
+  let result = false;
+
+  if (typeof param === 'object') {
+      let hasvalue = false;
+      if (Array.isArray(param)) {
+          hasvalue = param.length !== 0;
+      } else {
+          for (var pro in param) {
+              hasvalue = true;
+              break;
+          }
+      }
+
+      result = !hasvalue;
+  } else if (typeof param === 'string') {
+      if (param === '') result = true;
+  } else if (param === undefined) {
+      result = true;
+  }
+  return result;
 }
 
-// 获取旧值函数
-export function getChangedRowsOldValue(moduleId, index, attrcode) {
-  let isArr = Array.isArray(this.tableChangedRowsOldValue[moduleId]);
-  if (!isArr || (isArr && !isObj(this.tableChangedRowsOldValue[moduleId][index]))) {
-    return null;
-  }
-  return this.tableChangedRowsOldValue[moduleId][index][attrcode] || null;
-}
+// // 处理旧值函数
+// export function saveChangedRowsOldValue(moduleId, index, attrcode, value) {
+//   !Array.isArray(this.tableChangedRowsOldValue[moduleId]) && (this.tableChangedRowsOldValue[moduleId] = []);
+//   !isObj(this.tableChangedRowsOldValue[moduleId][index]) && (this.tableChangedRowsOldValue[moduleId][index] = {});
+//   this.tableChangedRowsOldValue[moduleId][index][attrcode] = value;
+// }
 
-// 删除旧值函数
-export function delChangedRowsOldValue(moduleId, index, attrcode) {
-  let isArr = Array.isArray(this.tableChangedRowsOldValue[moduleId]);
-  if (!isArr || (isArr && !isObj(this.tableChangedRowsOldValue[moduleId][index]))) {
-    return;
-  }
-  if (attrcode) {
-    this.tableChangedRowsOldValue[moduleId][index][attrcode] = null;
-  } else {
-    this.tableChangedRowsOldValue[moduleId][index] = {};
-  }
-}
+// // 获取旧值函数
+// export function getChangedRowsOldValue(moduleId, index, attrcode) {
+//   let isArr = Array.isArray(this.tableChangedRowsOldValue[moduleId]);
+//   if (!isArr || (isArr && !isObj(this.tableChangedRowsOldValue[moduleId][index]))) {
+//     return null;
+//   }
+//   return this.tableChangedRowsOldValue[moduleId][index][attrcode] || null;
+// }
+
+// // 删除旧值函数
+// export function delChangedRowsOldValue(moduleId, index, attrcode) {
+//   let isArr = Array.isArray(this.tableChangedRowsOldValue[moduleId]);
+//   if (!isArr || (isArr && !isObj(this.tableChangedRowsOldValue[moduleId][index]))) {
+//     return;
+//   }
+//   if (attrcode) {
+//     this.tableChangedRowsOldValue[moduleId][index][attrcode] = null;
+//   } else {
+//     this.tableChangedRowsOldValue[moduleId][index] = {};
+//   }
+// }

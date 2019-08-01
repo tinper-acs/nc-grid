@@ -18,6 +18,10 @@ var _nc_FormControl = require('./nc_FormControl');
 
 var _nc_FormControl2 = _interopRequireDefault(_nc_FormControl);
 
+var _beeInputNumber = require('bee-input-number');
+
+var _beeInputNumber2 = _interopRequireDefault(_beeInputNumber);
+
 var _beeSelect = require('bee-select');
 
 var _beeSelect2 = _interopRequireDefault(_beeSelect);
@@ -803,7 +807,8 @@ var Cell = function (_Component) {
                                 /***
                                  * 二开的编辑后事件 --liuxis
                                  */
-                                var secFns = pageScope.NCCSecondDevelop;
+                                // let secFns = pageScope.NCCSecondDevelop;
+                                var secFns = void 0;
                                 secFns && secFns.onAfterEvent && secFns.onAfterEvent({
                                     moduleId: moduleId,
                                     record: rows[index],
@@ -1054,7 +1059,7 @@ var Cell = function (_Component) {
                             rows[index].values[item.attrcode].value = 0;
                         }
                         if (item.itemtype === 'select') {
-                            pageScope.myTable[moduleId].verify[item.attrcode].selectOpen = false;
+                            // pageScope.myTable[moduleId].verify[item.attrcode].selectOpen = false;
                             _this3.setState({ table: _this3.state.table });
                         }
                         /*
@@ -1144,7 +1149,7 @@ var Cell = function (_Component) {
                                     // });
                                 }
                             } else {
-                                if (isLineStatus && !isEmpty(rows)) {
+                                if (isLineStatus && !(0, _utils.isEmpty)(rows)) {
                                     rows[index].values[item.attrcode].isEdit = false;
                                 }
                             }
@@ -1236,10 +1241,10 @@ var Cell = function (_Component) {
                     //浏览态
                     editItem = _react2["default"].createElement(_nc_FormControl2["default"], { size: 'sm', autoFocus: true, isViewMode: true });
                     break;
-                // case 'number':
-                //     scale = isWrong(scale) || scale == '-1' ? +item.scale || 0 : scale;
-                //     editItem = <NCNumber autoFocus={true} />;
-                //     break;
+                case 'number':
+                    scale = (0, _utils.isWrong)(scale) || scale == '-1' ? +item.scale || 0 : scale;
+                    editItem = _react2["default"].createElement(_beeInputNumber2["default"], { autoFocus: true });
+                    break;
                 // case 'textarea':
                 //     editItem = <NCTextArea autoFocus={true} style={{ height: '33px' }} />;
                 //     break;
