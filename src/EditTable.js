@@ -70,6 +70,18 @@ class EditTable extends Component {
         let {onRef} = this.props;
         onRef && onRef(this)
     }
+
+    componentWillReceiveProps(nextProps){
+        let {data: oldData} = this.props;
+        let {data: newData} = nextProps;
+        let {table} = this.state;
+        if(newData !== oldData){
+            this.setState({
+                table: Object.assign(...table,{rows: newData})
+            })
+        }
+    }
+
     //获取表格数据时触发的回调函数
     getTableRows = () => {
         let {table:{rows}} = this.state;
