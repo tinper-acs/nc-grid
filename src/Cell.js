@@ -26,7 +26,7 @@ import {
     undefinedOrfalse,
     isString,
     getDisplayByValue,
-    getChangedRowsOldValue
+    // getChangedRowsOldValue
 } from './utils';
 import { setFocusRowIndex } from './api/getFocusRowIndex';
 
@@ -59,12 +59,14 @@ export default class Cell extends Component {
             },
         };
         this.batchData = null;
+        this.tableChangedRowsOldValue = null;
     }
     componentWillMount(){
         let {tableInfo} = this.props;
         this.setState({
             table: tableInfo
         })
+        this.tableChangedRowsOldValue = tableInfo.rows;
     }
     /**
      * 处理onchang和onblur时变化数据的格式
@@ -190,6 +192,34 @@ export default class Cell extends Component {
             }
         }, 0);
     };
+    // 处理旧值函数
+    saveChangedRowsOldValue(moduleId, index, attrcode, value) {
+        !Array.isArray(this.tableChangedRowsOldValue[moduleId]) && (this.tableChangedRowsOldValue[moduleId] = []);
+        !isObj(this.tableChangedRowsOldValue[moduleId][index]) && (this.tableChangedRowsOldValue[moduleId][index] = {});
+        this.tableChangedRowsOldValue[moduleId][index][attrcode] = value;
+    }
+  
+    // 获取旧值函数
+    getChangedRowsOldValue(moduleId, index, attrcode) {
+        let isArr = Array.isArray(this.tableChangedRowsOldValue[moduleId]);
+        if (!isArr || (isArr && !isObj(this.tableChangedRowsOldValue[moduleId][index]))) {
+            return null;
+        }
+        return this.tableChangedRowsOldValue[moduleId][index][attrcode] || null;
+    }
+  
+    // 删除旧值函数
+    delChangedRowsOldValue(moduleId, index, attrcode) {
+        let isArr = Array.isArray(this.tableChangedRowsOldValue[moduleId]);
+        if (!isArr || (isArr && !isObj(this.tableChangedRowsOldValue[moduleId][index]))) {
+            return;
+        }
+        if (attrcode) {
+            this.tableChangedRowsOldValue[moduleId][index][attrcode] = null;
+        } else {
+            this.tableChangedRowsOldValue[moduleId][index] = {};
+        }
+    }
 
     /**
      * 创建 EditableItem
@@ -488,7 +518,7 @@ export default class Cell extends Component {
         
                     if (unInputType) {
                         // 新的取旧值
-                        let initVal = getChangedRowsOldValue.call(this, moduleId, index, item.attrcode);
+                        let initVal = this.getChangedRowsOldValue.call(this, moduleId, index, item.attrcode);
                         let isRefpk = _getValue(initVal);
                         if (isMul) {
                         if (valueChange.length > 0) {
@@ -616,7 +646,7 @@ export default class Cell extends Component {
                             ? null
                             : foolValue.vlaue
                         : valueChange;
-                        saveChangedRowsOldValue.call(this, moduleId, index, item.attrcode, OldVal);
+                        this.saveChangedRowsOldValue.call(this, moduleId, index, item.attrcode, OldVal);
                     }
                     },
                     onOpenChange: val => {
@@ -896,7 +926,7 @@ export default class Cell extends Component {
                                 rows[index].values[item.attrcode].isEdit = false;
                             }
             
-                            const oldValue = getChangedRowsOldValue.call(this, moduleId, index, item.attrcode);
+                            const oldValue = this.getChangedRowsOldValue.call(this, moduleId, index, item.attrcode);
                             changedrows.push({
                                 rowid: record.rowid,
                                 newvalue: {
@@ -906,7 +936,7 @@ export default class Cell extends Component {
                                 value: oldValue ? (item.itemtype === 'number' ? formatAcuracy(oldValue, scaleData) : oldValue) : ''
                                 }
                             });
-                            saveChangedRowsOldValue.call(this, moduleId, index, item.attrcode, val);
+                            this.saveChangedRowsOldValue.call(this, moduleId, index, item.attrcode, val);
                             if (item.itemtype === 'residtxt') {
                                 if (model == 'open') {
                                 // 当侧拉的情况下
@@ -988,15 +1018,15 @@ export default class Cell extends Component {
                                 /***
                                  * 二开的编辑后事件 --liuxis
                                  */
-                                let secFns = pageScope.NCCSecondDevelop;
-                                secFns &&
-                                secFns.onAfterEvent &&
-                                secFns.onAfterEvent({
-                                    moduleId,
-                                    record: rows[index],
-                                    attrcode: item.attrcode,
-                                    methods: pageScope.output
-                                });
+                                // let secFns = pageScope.NCCSecondDevelop;
+                                // secFns &&
+                                // secFns.onAfterEvent &&
+                                // secFns.onAfterEvent({
+                                //     moduleId,
+                                //     record: rows[index],
+                                //     attrcode: item.attrcode,
+                                //     methods: pageScope.output
+                                // });
                             }
                             } else {
                                 if (isLineStatus && !isEmpty(rows)) {
@@ -1016,7 +1046,7 @@ export default class Cell extends Component {
                             }
             
                             let isSwitch_browseDisabled = item.itemtype === 'switch_browse' && showDisable; // 开关且不可编辑
-                            let allRows = pageScope.editTable.getNumberOfRows(moduleId);
+                            // let allRows = pageScope.editTable.getNumberOfRows(moduleId);
                             /*
                             * 增一行的条件：
                             * 1、最后一行
@@ -1024,21 +1054,21 @@ export default class Cell extends Component {
                             * 3、当前单元格值不为空
                             */
             
-                            if (
-                            allRows == index + 1 &&
-                            config &&
-                            !!config.isAddRow &&
-                            !isSwitch_browseDisabled &&
-                            !isWrong(val) &&
-                            pageScope.state.meta[moduleId].status === 'edit'
-                            ) {
-                            // 添加自动增行后的回调
-                            const callback = isFunction(config.addRowCallback) ? config.addRowCallback : undefined;
-                            pageScope.editTable.addRow(moduleId, undefined, false, null, callback, true);
-                            } else {
-                            // 为了保证不是最后一行 渲染浏览态
-                            this.setState({ table: this.state.table });
-                            }
+                            // if (
+                            // allRows == index + 1 &&
+                            // config &&
+                            // !!config.isAddRow &&
+                            // !isSwitch_browseDisabled &&
+                            // !isWrong(val) &&
+                            // pageScope.state.meta[moduleId].status === 'edit'
+                            // ) {
+                            //     // 添加自动增行后的回调
+                            //     const callback = isFunction(config.addRowCallback) ? config.addRowCallback : undefined;
+                            //     pageScope.editTable.addRow(moduleId, undefined, false, null, callback, true);
+                            // } else {
+                            //     // 为了保证不是最后一行 渲染浏览态
+                            //     this.setState({ table: this.state.table });
+                            // }
                         }, 0);
                     }
                 }

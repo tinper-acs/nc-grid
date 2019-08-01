@@ -101176,6 +101176,7 @@
 	            }
 	        };
 	        _this2.batchData = null;
+	        _this2.tableChangedRowsOldValue = null;
 	        return _this2;
 	    }
 	
@@ -101185,6 +101186,7 @@
 	        this.setState({
 	            table: tableInfo
 	        });
+	        this.tableChangedRowsOldValue = tableInfo.rows;
 	    };
 	    /**
 	     * 处理onchang和onblur时变化数据的格式
@@ -101213,6 +101215,39 @@
 	     */
 	
 	
+	    // 处理旧值函数
+	    Cell.prototype.saveChangedRowsOldValue = function saveChangedRowsOldValue(moduleId, index, attrcode, value) {
+	        !Array.isArray(this.tableChangedRowsOldValue[moduleId]) && (this.tableChangedRowsOldValue[moduleId] = []);
+	        !(0, _utils.isObj)(this.tableChangedRowsOldValue[moduleId][index]) && (this.tableChangedRowsOldValue[moduleId][index] = {});
+	        this.tableChangedRowsOldValue[moduleId][index][attrcode] = value;
+	    };
+	
+	    // 获取旧值函数
+	
+	
+	    Cell.prototype.getChangedRowsOldValue = function getChangedRowsOldValue(moduleId, index, attrcode) {
+	        var isArr = Array.isArray(this.tableChangedRowsOldValue[moduleId]);
+	        if (!isArr || isArr && !(0, _utils.isObj)(this.tableChangedRowsOldValue[moduleId][index])) {
+	            return null;
+	        }
+	        return this.tableChangedRowsOldValue[moduleId][index][attrcode] || null;
+	    };
+	
+	    // 删除旧值函数
+	
+	
+	    Cell.prototype.delChangedRowsOldValue = function delChangedRowsOldValue(moduleId, index, attrcode) {
+	        var isArr = Array.isArray(this.tableChangedRowsOldValue[moduleId]);
+	        if (!isArr || isArr && !(0, _utils.isObj)(this.tableChangedRowsOldValue[moduleId][index])) {
+	            return;
+	        }
+	        if (attrcode) {
+	            this.tableChangedRowsOldValue[moduleId][index][attrcode] = null;
+	        } else {
+	            this.tableChangedRowsOldValue[moduleId][index] = {};
+	        }
+	    };
+	
 	    /**
 	     * 创建 EditableItem
 	     * @param {*} moduleId 
@@ -101230,6 +101265,8 @@
 	     * @param {*} edittable_dom 
 	     * @param {*} pageScope 
 	     */
+	
+	
 	    Cell.prototype.createEditableItem = function createEditableItem(_ref) {
 	        var moduleId = _ref.moduleId,
 	            _ref$config = _ref.config,
@@ -101495,7 +101532,7 @@
 	                            };
 	
 	                            // 新的取旧值
-	                            var initVal = _utils.getChangedRowsOldValue.call(_this3, moduleId, index, item.attrcode);
+	                            var initVal = _this3.getChangedRowsOldValue.call(_this3, moduleId, index, item.attrcode);
 	                            var isRefpk = _getValue(initVal);
 	                            if (isMul) {
 	                                if (valueChange.length > 0) {
@@ -101571,7 +101608,7 @@
 	                                });
 	                            }
 	                            var OldVal = isMul ? valueChange.length > 0 ? valueChange[0] : null : item.itemtype === 'refer' ? foolValue.vlaue == '' ? null : foolValue.vlaue : valueChange;
-	                            saveChangedRowsOldValue.call(_this3, moduleId, index, item.attrcode, OldVal);
+	                            _this3.saveChangedRowsOldValue.call(_this3, moduleId, index, item.attrcode, OldVal);
 	                        }
 	                    },
 	                    onOpenChange: function onOpenChange(val) {
@@ -101830,7 +101867,7 @@
 	                                    rows[index].values[item.attrcode].isEdit = false;
 	                                }
 	
-	                                var oldValue = _utils.getChangedRowsOldValue.call(_this3, moduleId, index, item.attrcode);
+	                                var oldValue = _this3.getChangedRowsOldValue.call(_this3, moduleId, index, item.attrcode);
 	                                changedrows.push({
 	                                    rowid: record.rowid,
 	                                    newvalue: {
@@ -101840,7 +101877,7 @@
 	                                        value: oldValue ? item.itemtype === 'number' ? (0, _utils.formatAcuracy)(oldValue, scaleData) : oldValue : ''
 	                                    }
 	                                });
-	                                saveChangedRowsOldValue.call(_this3, moduleId, index, item.attrcode, val);
+	                                _this3.saveChangedRowsOldValue.call(_this3, moduleId, index, item.attrcode, val);
 	                                if (item.itemtype === 'residtxt') {
 	                                    if (model == 'open') {
 	                                        // 当侧拉的情况下
@@ -101892,13 +101929,15 @@
 	                                    /***
 	                                     * 二开的编辑后事件 --liuxis
 	                                     */
-	                                    var secFns = pageScope.NCCSecondDevelop;
-	                                    secFns && secFns.onAfterEvent && secFns.onAfterEvent({
-	                                        moduleId: moduleId,
-	                                        record: rows[index],
-	                                        attrcode: item.attrcode,
-	                                        methods: pageScope.output
-	                                    });
+	                                    // let secFns = pageScope.NCCSecondDevelop;
+	                                    // secFns &&
+	                                    // secFns.onAfterEvent &&
+	                                    // secFns.onAfterEvent({
+	                                    //     moduleId,
+	                                    //     record: rows[index],
+	                                    //     attrcode: item.attrcode,
+	                                    //     methods: pageScope.output
+	                                    // });
 	                                }
 	                            } else {
 	                                if (isLineStatus && !isEmpty(rows)) {
@@ -101918,7 +101957,7 @@
 	                            }
 	
 	                            var isSwitch_browseDisabled = item.itemtype === 'switch_browse' && showDisable; // 开关且不可编辑
-	                            var allRows = pageScope.editTable.getNumberOfRows(moduleId);
+	                            // let allRows = pageScope.editTable.getNumberOfRows(moduleId);
 	                            /*
 	                            * 增一行的条件：
 	                            * 1、最后一行
@@ -101926,14 +101965,21 @@
 	                            * 3、当前单元格值不为空
 	                            */
 	
-	                            if (allRows == index + 1 && config && !!config.isAddRow && !isSwitch_browseDisabled && !(0, _utils.isWrong)(val) && pageScope.state.meta[moduleId].status === 'edit') {
-	                                // 添加自动增行后的回调
-	                                var callback = isFunction(config.addRowCallback) ? config.addRowCallback : undefined;
-	                                pageScope.editTable.addRow(moduleId, undefined, false, null, callback, true);
-	                            } else {
-	                                // 为了保证不是最后一行 渲染浏览态
-	                                _this3.setState({ table: _this3.state.table });
-	                            }
+	                            // if (
+	                            // allRows == index + 1 &&
+	                            // config &&
+	                            // !!config.isAddRow &&
+	                            // !isSwitch_browseDisabled &&
+	                            // !isWrong(val) &&
+	                            // pageScope.state.meta[moduleId].status === 'edit'
+	                            // ) {
+	                            //     // 添加自动增行后的回调
+	                            //     const callback = isFunction(config.addRowCallback) ? config.addRowCallback : undefined;
+	                            //     pageScope.editTable.addRow(moduleId, undefined, false, null, callback, true);
+	                            // } else {
+	                            //     // 为了保证不是最后一行 渲染浏览态
+	                            //     this.setState({ table: this.state.table });
+	                            // }
 	                        }, 0);
 	                    }
 	                })
