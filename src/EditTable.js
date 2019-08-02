@@ -51,7 +51,7 @@ class EditTable extends Component {
                 model: false, //是否打开侧滑面板
                 origin: {},
                 operType: 'add',
-                allpks: []
+                allpks: [], //所有 data 的 id 属性集合
             },
             currentIndex: -1
         };
@@ -111,7 +111,7 @@ class EditTable extends Component {
         // 分页显示最多按钮
         const MAX_BUTTONS = 5;
         // 获取table的meta信息 注意异步时候 meta中没有此id 为undefined
-        let { columns,moduleId, config, pageScope } = props;
+        let { columns,moduleId, pageScope,...config } = props;
         let meta = {};
         // let { renderItem } = pageScope.state;
         let renderItem = {};
@@ -145,22 +145,23 @@ class EditTable extends Component {
         // status: '0'(编辑态)，'1'()，'2'()，'3'()
         let tablePageData = rows.filter(e => e.status != '3');
         // 左侧多选框
-        if (config && config.selectedChange && typeof config.selectedChange === 'function') {
-            table.selectedChange = config.selectedChange;
-        } else {
-            table.selectedChange = null;
-        }
+        // if (config && config.selectedChange && typeof config.selectedChange === 'function') {
+        //     table.selectedChange = config.selectedChange;
+        // } else {
+        //     table.selectedChange = null;
+        // }
     
-        if (config && typeof config.selectedChange === 'function') {
-            table.statusChange = config.statusChange;
-        }
+        // if (config && typeof config.selectedChange === 'function') {
+        //     table.statusChange = config.statusChange;
+        // }
         //侧拉面板data
         // let tableModeldata = pageScope.state.tableModeldata[moduleId] || {
         //     rowid: String(new Date().getTime()).slice(-5) + Math.random().toString(12),
         //     status: '0',
         //     values: {}
         // };
-    
+
+        //计算行号，存在 numberindex 字段中
         tablePageData.map((item, index) => {
             let values = item.values;
             let rowsLenght = 1;
@@ -175,7 +176,7 @@ class EditTable extends Component {
         });
         // 去掉设置为隐藏的列
         let tempColums = deepClone(columns.filter(item => !!item.visible));
-        const verify = {};
+        // const verify = {};
         // let stateVerify = pageScope.myTable[moduleId];
     
         // 递归处理添加日期标识
@@ -230,10 +231,10 @@ class EditTable extends Component {
         
             if (config && config.handlePageInfoChange) {
                 config.handlePageInfoChange(
-                { ...pageScope.props, ...pageScope.output },
-                config,
-                splitPks(table.allpks, table.pageInfo.pageIndex, table.pageInfo.pageSize),
-                total
+                    { ...pageScope.props, ...pageScope.output },
+                    config,
+                    splitPks(table.allpks, table.pageInfo.pageIndex, table.pageInfo.pageSize),
+                    total
                 );
             }
         };
@@ -281,7 +282,7 @@ class EditTable extends Component {
         totalData[0].numberindex = json['table002'];
         }
         */}
-        let fixed = table.checkboxFix ? {} : { fixed: 'left' };
+        // let fixed = table.checkboxFix ? {} : { fixed: 'left' };
         {/* 
         let defaultColumns = [
             {
@@ -402,7 +403,7 @@ class EditTable extends Component {
                 myEditScope.setState({ table: { ...this.state.table, rows: sortData } });
                 }
             }
-            };
+        };
         return (
             <div>
                 <div className="lightapp-component-editTable" ref="table">
@@ -729,8 +730,7 @@ class EditTable extends Component {
                     isFunction(headerClick) &&
                     headerClick(
                         {
-                        ...pageScope.props,
-                        ...pageScope.output
+                        ...this.props
                         },
                         ICode
                     );

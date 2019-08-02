@@ -40,6 +40,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "d
 
 function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
 
+function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
+
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -104,7 +106,7 @@ var EditTable = function (_Component) {
                 model: false, //是否打开侧滑面板
                 origin: {},
                 operType: 'add',
-                allpks: []
+                allpks: [] //所有 data 的 id 属性集合
             },
             currentIndex: -1
         };
@@ -172,10 +174,11 @@ var EditTable = function (_Component) {
         // 分页显示最多按钮
         var MAX_BUTTONS = 5;
         // 获取table的meta信息 注意异步时候 meta中没有此id 为undefined
+
         var columns = props.columns,
             moduleId = props.moduleId,
-            config = props.config,
-            pageScope = props.pageScope;
+            pageScope = props.pageScope,
+            config = _objectWithoutProperties(props, ['columns', 'moduleId', 'pageScope']);
 
         var meta = {};
         // let { renderItem } = pageScope.state;
@@ -220,15 +223,15 @@ var EditTable = function (_Component) {
             return e.status != '3';
         });
         // 左侧多选框
-        if (config && config.selectedChange && typeof config.selectedChange === 'function') {
-            table.selectedChange = config.selectedChange;
-        } else {
-            table.selectedChange = null;
-        }
+        // if (config && config.selectedChange && typeof config.selectedChange === 'function') {
+        //     table.selectedChange = config.selectedChange;
+        // } else {
+        //     table.selectedChange = null;
+        // }
 
-        if (config && typeof config.selectedChange === 'function') {
-            table.statusChange = config.statusChange;
-        }
+        // if (config && typeof config.selectedChange === 'function') {
+        //     table.statusChange = config.statusChange;
+        // }
         //侧拉面板data
         // let tableModeldata = pageScope.state.tableModeldata[moduleId] || {
         //     rowid: String(new Date().getTime()).slice(-5) + Math.random().toString(12),
@@ -236,6 +239,7 @@ var EditTable = function (_Component) {
         //     values: {}
         // };
 
+        //计算行号，存在 numberindex 字段中
         tablePageData.map(function (item, index) {
             var values = item.values;
             var rowsLenght = 1;
@@ -248,7 +252,7 @@ var EditTable = function (_Component) {
         var tempColums = (0, _utils.deepClone)(columns.filter(function (item) {
             return !!item.visible;
         }));
-        var verify = {};
+        // const verify = {};
         // let stateVerify = pageScope.myTable[moduleId];
 
         // 递归处理添加日期标识
@@ -307,33 +311,33 @@ var EditTable = function (_Component) {
                 config.handlePageInfoChange(_extends({}, pageScope.props, pageScope.output), config, splitPks(table.allpks, table.pageInfo.pageIndex, table.pageInfo.pageSize), total);
             }
         };
-        {/* 
-            // 合计行列配置
-            let totalColums = gettotalColums(columns);
-            // 合计行数据
-            let totalData = [];
-            // 处理过精度的合计行数据
-            let finalTotalData = [];
-            // 合计行精度
-            let totalScale = null;
-            // 当展示合计行的时候执行
-            if ((config && config.showTotal) || getMetaIsTotal(totalColums)) {
-               // 不展示合计行时不执行
-               totalData = _getTotalData.call(pageScope, totalColums, tablePageData, moduleId, config);
-               totalScale = getTotalScale(totalColums, tablePageData);
-            }
-            if (config && config.showIndex && !config.showCheck && (config.showTotal || getMetaIsTotal(totalColums)) && json) {
-            // 有序好没有多选框序号位置为合计
-            totalColums.forEach(eve => {
-               // 因为有重复渲染，所以在没有多选框的时候,将合计单元格设为80px
-               if (eve.key === 'numberindex') {
-               eve.width = '60px';
-               }
-            });
-            totalData[0].numberindex = json['table002'];
-            }
-            */}
-        var fixed = table.checkboxFix ? {} : { fixed: 'left' };
+        {} /* 
+           // 合计行列配置
+           let totalColums = gettotalColums(columns);
+           // 合计行数据
+           let totalData = [];
+           // 处理过精度的合计行数据
+           let finalTotalData = [];
+           // 合计行精度
+           let totalScale = null;
+           // 当展示合计行的时候执行
+           if ((config && config.showTotal) || getMetaIsTotal(totalColums)) {
+              // 不展示合计行时不执行
+              totalData = _getTotalData.call(pageScope, totalColums, tablePageData, moduleId, config);
+              totalScale = getTotalScale(totalColums, tablePageData);
+           }
+           if (config && config.showIndex && !config.showCheck && (config.showTotal || getMetaIsTotal(totalColums)) && json) {
+           // 有序好没有多选框序号位置为合计
+           totalColums.forEach(eve => {
+              // 因为有重复渲染，所以在没有多选框的时候,将合计单元格设为80px
+              if (eve.key === 'numberindex') {
+              eve.width = '60px';
+              }
+           });
+           totalData[0].numberindex = json['table002'];
+           }
+           */
+        // let fixed = table.checkboxFix ? {} : { fixed: 'left' };
         {} /* 
            let defaultColumns = [
               {
@@ -811,7 +815,7 @@ var EditTable = function (_Component) {
                     className: 'edittable-title single-line-and-ellipsis'
                     // 增加过滤的交互，给表格加个onclick事件
                     , onClick: function onClick() {
-                        (0, _utils.isFunction)(headerClick) && headerClick(_extends({}, pageScope.props, pageScope.output), ICode);
+                        (0, _utils.isFunction)(headerClick) && headerClick(_extends({}, _this4.props), ICode);
                     },
                     style: IType === 'number' ? { paddingRight: '9px', textAlign: 'right', color: color } : { color: color }
                 },

@@ -81,7 +81,6 @@ export default class Cell extends Component {
                 return foolval;
             // 其他
             default:
-                console.log('display',getDisplayByValue(val, item));
                 return {
                     value: val,
                     display: getDisplayByValue(val, item)
@@ -199,7 +198,7 @@ export default class Cell extends Component {
     saveChangedRowsOldValue(moduleId, index, attrcode, value) {
         !Array.isArray(this.tableChangedRowsOldValue[moduleId]) && (this.tableChangedRowsOldValue[moduleId] = []);
         !isObj(this.tableChangedRowsOldValue[moduleId][index]) && (this.tableChangedRowsOldValue[moduleId][index] = {});
-        this.tableChangedRowsOldValue[moduleId][index][attrcode] = value;
+        // this.tableChangedRowsOldValue[moduleId][index][attrcode] = value;
     }
   
     // 获取旧值函数
@@ -249,6 +248,7 @@ export default class Cell extends Component {
                 status: '0',
                 values: {}
                 };
+        // console.log('渲染单元格',value,record)
         return this.renderTableItem.call(
             this,
             moduleId,
@@ -433,23 +433,23 @@ export default class Cell extends Component {
                         let count = arr.length;
                         arr.fill(1);
                         valueChange.replace(/[^\x00-\xff]/g, (a, b, c) => {
-                        arr[b] = 2;
+                            arr[b] = 2;
                         });
                         let reducer = arr.reduce((a, b) => {
-                        if (a + b > item.maxlength) {
-                            count--;
-                        }
-                        return a + b;
+                            if (a + b > item.maxlength) {
+                                count--;
+                            }
+                            return a + b;
                         }, 0);
                         if (!flag && reducer > item.maxlength) {
-                        valueChange = rows[index].values[item.attrcode].value;
-                        toast({
-                            color: 'danger',
-                            title: `${json && json['table_tips']}`,
-                            content: `${json && json['table_tips_content']}
-                                                    ${item.maxlength}`
-                        });
-                        foolValue.target && foolValue.target.blur();
+                            valueChange = rows[index].values[item.attrcode].value;
+                            toast({
+                                color: 'danger',
+                                title: `${json && json['table_tips']}`,
+                                content: `${json && json['table_tips_content']}
+                                                        ${item.maxlength}`
+                            });
+                            foolValue.target && foolValue.target.blur();
                         }
         
                         rows[index].values[item.attrcode].value = valueChange;
@@ -654,69 +654,69 @@ export default class Cell extends Component {
                     }
                     },
                     onOpenChange: val => {
-                    if (!isLineStatus) {
-                        if (val) {
-                        return;
+                        if (!isLineStatus) {
+                            if (val) {
+                            return;
+                            }
+                            pageScope.myTable[moduleId].verify[item.attrcode].DTOpen = val;
+                            this.setState({ table: this.state.table });
                         }
-                        pageScope.myTable[moduleId].verify[item.attrcode].DTOpen = val;
-                        this.setState({ table: this.state.table });
-                    }
                     },
                     onClick: (evt, event) => {
-                    // 新需求还有点问题，勿删
-                    // if (((!isLineStatus || item.itemtype === 'checkbox_switch') && CONFIG.beforeClickTypes.includes(item.itemtype))) {
-                    if (!isLineStatus && CONFIG.beforeClickTypes.includes(item.itemtype)) {
-                        // 获取事件对象
-                        let target = (evt && evt.target) || (event && event.target) || event;
-                        // 侧拉编辑前回调
-                        if (config && typeof config.onBeforeEvent == 'function') {
-                        let isContinue = config.onBeforeEvent(
-                            { ...pageScope.props, ...pageScope.output },
-                            moduleId,
-                            item,
-                            index,
-                            record.values[item.attrcode],
-                            record
-                        );
-                        // 用于处理侧拉框编辑前所要执行的函数
-                        const modelHanlder = (flag, target) => {
-                            if (!flag && target) {
-                            if (item.itemtype === 'checkbox_switch') {
-                                checkboxSwitchContinue = false;
+                        // 新需求还有点问题，勿删
+                        // if (((!isLineStatus || item.itemtype === 'checkbox_switch') && CONFIG.beforeClickTypes.includes(item.itemtype))) {
+                        if (!isLineStatus && CONFIG.beforeClickTypes.includes(item.itemtype)) {
+                            // 获取事件对象
+                            let target = (evt && evt.target) || (event && event.target) || event;
+                            // 侧拉编辑前回调
+                            if (config && typeof config.onBeforeEvent == 'function') {
+                            let isContinue = config.onBeforeEvent(
+                                { ...pageScope.props, ...pageScope.output },
+                                moduleId,
+                                item,
+                                index,
+                                record.values[item.attrcode],
+                                record
+                            );
+                            // 用于处理侧拉框编辑前所要执行的函数
+                            const modelHanlder = (flag, target) => {
+                                if (!flag && target) {
+                                if (item.itemtype === 'checkbox_switch') {
+                                    checkboxSwitchContinue = false;
+                                }
+                                target.blur && target.blur();
+                                }
+                            };
+                            let result = null;
+                            const type = testType(isContinue);
+                            switch (type) {
+                                // true/flase
+                                case 'Boolean':
+                                result = hanlderModelBeforeEvent(true, isContinue, null, modelHanlder, target);
+                                break;
+                                // 返回的是async函数
+                                case 'AsyncFunction':
+                                result = hanlderModelBeforeEvent(false, isContinue, false, modelHanlder, target);
+                                break;
+                                // 返回的Promise对象
+                                case 'Promise':
+                                result = hanlderModelBeforeEvent(false, isContinue, true, modelHanlder, target);
+                                break;
+                                // 取Boolean值
+                                default:
+                                result = hanlderModelBeforeEvent(true, !!isContinue, null, modelHanlder, target);
+                                break;
                             }
-                            target.blur && target.blur();
+                            // 处理日期控件编辑前
+                            result.then(value => {
+                                pageScope.myTable[moduleId].verify[item.attrcode].DTOpen = value;
+                                this.setState({ table: this.state.table });
+                            });
+                            } else {
+                                pageScope.myTable[moduleId].verify[item.attrcode].DTOpen = true;
+                                this.setState({ table: this.state.table });
                             }
-                        };
-                        let result = null;
-                        const type = testType(isContinue);
-                        switch (type) {
-                            // true/flase
-                            case 'Boolean':
-                            result = hanlderModelBeforeEvent(true, isContinue, null, modelHanlder, target);
-                            break;
-                            // 返回的是async函数
-                            case 'AsyncFunction':
-                            result = hanlderModelBeforeEvent(false, isContinue, false, modelHanlder, target);
-                            break;
-                            // 返回的Promise对象
-                            case 'Promise':
-                            result = hanlderModelBeforeEvent(false, isContinue, true, modelHanlder, target);
-                            break;
-                            // 取Boolean值
-                            default:
-                            result = hanlderModelBeforeEvent(true, !!isContinue, null, modelHanlder, target);
-                            break;
                         }
-                        // 处理日期控件编辑前
-                        result.then(value => {
-                            pageScope.myTable[moduleId].verify[item.attrcode].DTOpen = value;
-                            this.setState({ table: this.state.table });
-                        });
-                        } else {
-                            pageScope.myTable[moduleId].verify[item.attrcode].DTOpen = true;
-                            this.setState({ table: this.state.table });
-                        }
-                    }
                     },
                     onFocus: (evt, event) => {
                         // 新需求还有点问题，勿删
@@ -770,25 +770,25 @@ export default class Cell extends Component {
                             }
                             if (item.itemtype === 'select') {
                                 result.then(value => {
-                                if (pageScope.myTable[moduleId].verify[item.attrcode].selectOpen) {
-                                    pageScope.myTable[moduleId].verify[item.attrcode].selectOpen = false;
-                                    this.setState({ table: this.state.table });
-                                } else {
-                                    pageScope.myTable[moduleId].verify[item.attrcode].selectOpen = value;
-                                    this.setState({ table: this.state.table });
-                                }
+                                    if (pageScope.myTable[moduleId].verify[item.attrcode].selectOpen) {
+                                        pageScope.myTable[moduleId].verify[item.attrcode].selectOpen = false;
+                                        this.setState({ table: this.state.table });
+                                    } else {
+                                        pageScope.myTable[moduleId].verify[item.attrcode].selectOpen = value;
+                                        this.setState({ table: this.state.table });
+                                    }
                                 });
                             }
                             } else {
-                            if (item.itemtype === 'select') {
-                                if (pageScope.myTable[moduleId].verify[item.attrcode].selectOpen) {
-                                pageScope.myTable[moduleId].verify[item.attrcode].selectOpen = false;
-                                this.setState({ table: this.state.table });
-                                } else {
-                                pageScope.myTable[moduleId].verify[item.attrcode].selectOpen = true;
-                                this.setState({ table: this.state.table });
+                                if (item.itemtype === 'select') {
+                                    if (pageScope.myTable[moduleId].verify[item.attrcode].selectOpen) {
+                                        pageScope.myTable[moduleId].verify[item.attrcode].selectOpen = false;
+                                        this.setState({ table: this.state.table });
+                                    } else {
+                                        pageScope.myTable[moduleId].verify[item.attrcode].selectOpen = true;
+                                        this.setState({ table: this.state.table });
+                                    }
                                 }
-                            }
                             }
                         }
             
@@ -1271,11 +1271,11 @@ export default class Cell extends Component {
             IType,
             text,
             index,
-            values,
+            // values,
             item,
-            scale,
-            value,
-            isEdit,
+            scale : IScale,
+            // value,
+            // isEdit,
             config,
             record,
             model,
@@ -1283,8 +1283,8 @@ export default class Cell extends Component {
             edittable_dom,
             ICode,
             moduleId,
-            display,
-            disabled,
+            // display,
+            // disabled,
             renderItem,
             renderStatus,
             LanguageMeta,
@@ -1293,10 +1293,25 @@ export default class Cell extends Component {
             tableScope,
             tableStatus
         } = this.props;
-        // console.log('IType: ',IType,'tableStatus: ',tableStatus)
-        // 编辑态meta.status === 'edit' 且  不是label、customer类型  走编辑态   或者switch类型
+        //===========================================================================================
+        // 比如操作列不走此分支
+        let [values, editItem, value, display, scale, disabled, isEdit] = [record.values];
+        // 如果有这个键取这个键的value值，否则为null
+        value = isObj(values[ICode]) ? typeFormat(values[ICode].value, IType) : null;
+        display = isObj(values[ICode]) ? values[ICode].display : null;
+        scale = isObj(values[ICode])
+                ? !isWrong(values[ICode].scale) && values[ICode].scale != '-1'
+                    ? +values[ICode].scale
+                    : +IScale || 0
+                : +IScale || 0;
+        // true为不可编辑
+        disabled = isObj(values[ICode]) ? values[ICode].disabled || false : false;
+        // true为渲染控件
+        isEdit = isObj(values[ICode]) ? values[ICode].isEdit || false : false;
+        //===========================================================================================
+        // tableStatus = isEdit ? 'edit' : 'browse'
+        // 编辑态isEdit = 'true' 且  不是label、customer类型  走编辑态   或者switch类型
         if ((!CONFIG.noEditType.includes(IType) && tableStatus === 'edit') || IType === 'switch_browse') {
-            // 新需求还有点问题，勿删
             // if (isEdit || IType === "switch_browse" || IType === "checkbox_switch" || IType === "switch") {
             if (isEdit || IType === 'switch_browse') {
                 return (

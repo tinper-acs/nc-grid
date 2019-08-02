@@ -196,11 +196,8 @@ var Cell = function (_Component) {
                 IType = _this2$props3.IType,
                 text = _this2$props3.text,
                 index = _this2$props3.index,
-                values = _this2$props3.values,
                 item = _this2$props3.item,
-                scale = _this2$props3.scale,
-                value = _this2$props3.value,
-                isEdit = _this2$props3.isEdit,
+                IScale = _this2$props3.scale,
                 config = _this2$props3.config,
                 record = _this2$props3.record,
                 model = _this2$props3.model,
@@ -208,8 +205,6 @@ var Cell = function (_Component) {
                 edittable_dom = _this2$props3.edittable_dom,
                 ICode = _this2$props3.ICode,
                 moduleId = _this2$props3.moduleId,
-                display = _this2$props3.display,
-                disabled = _this2$props3.disabled,
                 renderItem = _this2$props3.renderItem,
                 renderStatus = _this2$props3.renderStatus,
                 LanguageMeta = _this2$props3.LanguageMeta,
@@ -217,11 +212,30 @@ var Cell = function (_Component) {
                 hyperlinkflag = _this2$props3.hyperlinkflag,
                 tableScope = _this2$props3.tableScope,
                 tableStatus = _this2$props3.tableStatus;
-            // console.log('IType: ',IType,'tableStatus: ',tableStatus)
-            // 编辑态meta.status === 'edit' 且  不是label、customer类型  走编辑态   或者switch类型
+            //===========================================================================================
+            // 比如操作列不走此分支
 
+            var _ref = [record.values],
+                values = _ref[0],
+                editItem = _ref[1],
+                value = _ref[2],
+                display = _ref[3],
+                scale = _ref[4],
+                disabled = _ref[5],
+                isEdit = _ref[6];
+            // 如果有这个键取这个键的value值，否则为null
+
+            value = (0, _utils.isObj)(values[ICode]) ? (0, _utils.typeFormat)(values[ICode].value, IType) : null;
+            display = (0, _utils.isObj)(values[ICode]) ? values[ICode].display : null;
+            scale = (0, _utils.isObj)(values[ICode]) ? !(0, _utils.isWrong)(values[ICode].scale) && values[ICode].scale != '-1' ? +values[ICode].scale : +IScale || 0 : +IScale || 0;
+            // true为不可编辑
+            disabled = (0, _utils.isObj)(values[ICode]) ? values[ICode].disabled || false : false;
+            // true为渲染控件
+            isEdit = (0, _utils.isObj)(values[ICode]) ? values[ICode].isEdit || false : false;
+            //===========================================================================================
+            // tableStatus = isEdit ? 'edit' : 'browse'
+            // 编辑态isEdit = 'true' 且  不是label、customer类型  走编辑态   或者switch类型
             if (!_config2["default"].noEditType.includes(IType) && tableStatus === 'edit' || IType === 'switch_browse') {
-                // 新需求还有点问题，勿删
                 // if (isEdit || IType === "switch_browse" || IType === "checkbox_switch" || IType === "switch") {
                 if (isEdit || IType === 'switch_browse') {
                     return _react2["default"].createElement(
@@ -410,7 +424,6 @@ var Cell = function (_Component) {
                 return foolval;
             // 其他
             default:
-                console.log('display', (0, _utils.getDisplayByValue)(val, item));
                 return {
                     value: val,
                     display: (0, _utils.getDisplayByValue)(val, item)
@@ -429,7 +442,7 @@ var Cell = function (_Component) {
     Cell.prototype.saveChangedRowsOldValue = function saveChangedRowsOldValue(moduleId, index, attrcode, value) {
         !Array.isArray(this.tableChangedRowsOldValue[moduleId]) && (this.tableChangedRowsOldValue[moduleId] = []);
         !(0, _utils.isObj)(this.tableChangedRowsOldValue[moduleId][index]) && (this.tableChangedRowsOldValue[moduleId][index] = {});
-        this.tableChangedRowsOldValue[moduleId][index][attrcode] = value;
+        // this.tableChangedRowsOldValue[moduleId][index][attrcode] = value;
     };
 
     // 获取旧值函数
@@ -477,36 +490,37 @@ var Cell = function (_Component) {
      */
 
 
-    Cell.prototype.createEditableItem = function createEditableItem(_ref) {
-        var moduleId = _ref.moduleId,
-            _ref$config = _ref.config,
-            config = _ref$config === undefined ? {} : _ref$config,
-            _ref$type = _ref.type,
-            type = _ref$type === undefined ? 'line' : _ref$type,
-            _ref$renderItem = _ref.renderItem,
-            renderItem = _ref$renderItem === undefined ? {} : _ref$renderItem,
-            _ref$item = _ref.item,
-            item = _ref$item === undefined ? {} : _ref$item,
-            _ref$index = _ref.index,
-            index = _ref$index === undefined ? 1 : _ref$index,
-            _ref$value = _ref.value,
-            value = _ref$value === undefined ? null : _ref$value,
-            scale = _ref.scale,
-            _ref$disabled = _ref.disabled,
-            disabled = _ref$disabled === undefined ? false : _ref$disabled,
-            record = _ref.record,
-            _ref$model = _ref.model,
-            model = _ref$model === undefined ? 'origin' : _ref$model,
-            _ref$status = _ref.status,
-            status = _ref$status === undefined ? false : _ref$status,
-            edittable_dom = _ref.edittable_dom,
-            pageScope = _ref.pageScope;
+    Cell.prototype.createEditableItem = function createEditableItem(_ref2) {
+        var moduleId = _ref2.moduleId,
+            _ref2$config = _ref2.config,
+            config = _ref2$config === undefined ? {} : _ref2$config,
+            _ref2$type = _ref2.type,
+            type = _ref2$type === undefined ? 'line' : _ref2$type,
+            _ref2$renderItem = _ref2.renderItem,
+            renderItem = _ref2$renderItem === undefined ? {} : _ref2$renderItem,
+            _ref2$item = _ref2.item,
+            item = _ref2$item === undefined ? {} : _ref2$item,
+            _ref2$index = _ref2.index,
+            index = _ref2$index === undefined ? 1 : _ref2$index,
+            _ref2$value = _ref2.value,
+            value = _ref2$value === undefined ? null : _ref2$value,
+            scale = _ref2.scale,
+            _ref2$disabled = _ref2.disabled,
+            disabled = _ref2$disabled === undefined ? false : _ref2$disabled,
+            record = _ref2.record,
+            _ref2$model = _ref2.model,
+            model = _ref2$model === undefined ? 'origin' : _ref2$model,
+            _ref2$status = _ref2.status,
+            status = _ref2$status === undefined ? false : _ref2$status,
+            edittable_dom = _ref2.edittable_dom,
+            pageScope = _ref2.pageScope;
 
         record = Object.keys(record).length ? record : {
             rowid: null,
             status: '0',
             values: {}
         };
+        // console.log('渲染单元格',value,record)
         return this.renderTableItem.call(this, moduleId, config, type, record, item, index, value, scale, disabled, renderItem, model, status, edittable_dom, pageScope);
     };
 
@@ -551,13 +565,13 @@ var Cell = function (_Component) {
                     return false;
             }
         }(isdisabled);
-        var _ref2 =
+        var _ref3 =
         // 用于 onblur 和onchange常量
         [_config2["default"].blurTypes.includes(item.itemtype), _config2["default"].changeTypes.includes(item.itemtype), type === 'line', []],
-            isInputType = _ref2[0],
-            unInputType = _ref2[1],
-            isLineStatus = _ref2[2],
-            changedrows = _ref2[3];
+            isInputType = _ref3[0],
+            unInputType = _ref3[1],
+            isLineStatus = _ref3[2],
+            changedrows = _ref3[3];
         // 侧拉框不自动获取焦点
 
         var focus = type !== 'modal';
@@ -657,7 +671,7 @@ var Cell = function (_Component) {
                                 toast({
                                     color: 'danger',
                                     title: '' + (json && json['table_tips']),
-                                    content: (json && json['table_tips_content']) + '\n                                                    ' + item.maxlength
+                                    content: (json && json['table_tips_content']) + '\n                                                        ' + item.maxlength
                                 });
                                 foolValue.target && foolValue.target.blur();
                             }
