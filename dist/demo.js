@@ -99975,7 +99975,7 @@
 	        var newData = nextProps.data;
 	        var table = this.state.table;
 	
-	        if (newData !== oldData) {
+	        if (newData !== oldData && newData.length !== oldData.length) {
 	            this.setState({
 	                table: _extends.apply(undefined, _toConsumableArray(table).concat([{ rows: newData }]))
 	            });
@@ -101121,7 +101121,7 @@
 	                            { className: IType === 'number' ? 'text-left edit-center' : 'edit-center' },
 	                            _react2['default'].createElement(
 	                                _beeTooltip2['default'],
-	                                { className: 'tooltip-word-color', placement: 'top', delay: 1, overlay: tableItemValue },
+	                                { inverse: true, className: 'tooltip-word-color', placement: 'top', delay: 1, overlay: tableItemValue },
 	                                _react2['default'].createElement(
 	                                    'span',
 	                                    { className: config.multipleRowCell ? '' : 'single-line-and-ellipsis' },
@@ -101140,6 +101140,7 @@
 	                    return _react2['default'].createElement(
 	                        _beeTooltip2['default'],
 	                        {
+	                            inverse: true,
 	                            className: 'tooltip-word-color',
 	                            placement: 'top',
 	                            delay: 1,
@@ -101164,7 +101165,7 @@
 	                        },
 	                        _react2['default'].createElement(
 	                            _beeTooltip2['default'],
-	                            { className: 'tooltip-word-color', placement: 'top', delay: 1, overlay: _tableItemValue },
+	                            { inverse: true, className: 'tooltip-word-color', placement: 'top', delay: 1, overlay: _tableItemValue },
 	                            // 如果模板里有hyperlinkflag:true
 	                            hyperlinkflag ? _react2['default'].createElement(
 	                                'a',
@@ -101222,13 +101223,14 @@
 	
 	
 	    Cell.prototype.handleChangeData = function handleChangeData(itemtype, foolval, val, item) {
-	        console.log('this.batchData', this.batchData);
+	        // console.log('this.batchData',this.batchData);
 	        switch (true) {
 	            // 参照
 	            case itemtype:
 	                return foolval;
 	            // 其他
 	            default:
+	                console.log('display', (0, _utils.getDisplayByValue)(val, item));
 	                return {
 	                    value: val,
 	                    display: (0, _utils.getDisplayByValue)(val, item)

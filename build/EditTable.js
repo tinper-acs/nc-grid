@@ -134,7 +134,7 @@ var EditTable = function (_Component) {
         var newData = nextProps.data;
         var table = this.state.table;
 
-        if (newData !== oldData) {
+        if (newData !== oldData && newData.length !== oldData.length) {
             this.setState({
                 table: _extends.apply(undefined, _toConsumableArray(table).concat([{ rows: newData }]))
             });

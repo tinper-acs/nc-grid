@@ -74,17 +74,18 @@ export default class Cell extends Component {
      * 处理onchang和onblur时变化数据的格式
      */
     handleChangeData(itemtype, foolval, val, item) {
-        console.log('this.batchData',this.batchData);
+        // console.log('this.batchData',this.batchData);
         switch (true) {
-        // 参照
-        case itemtype:
-            return foolval;
-        // 其他
-        default:
-            return {
-                value: val,
-                display: getDisplayByValue(val, item)
-            };
+            // 参照
+            case itemtype:
+                return foolval;
+            // 其他
+            default:
+                console.log('display',getDisplayByValue(val, item));
+                return {
+                    value: val,
+                    display: getDisplayByValue(val, item)
+                };
         }
     }
     hanlder = () => {
@@ -468,16 +469,16 @@ export default class Cell extends Component {
                         // 因为有些字段为空值，后台默认为过滤去了
                         rows[index].values[item.attrcode] = {};
                         if (model == 'open') {
-                        tableModeldata.values[item.attrcode] = {};
+                            tableModeldata.values[item.attrcode] = {};
                         } else {
-                        rows[index].values[item.attrcode] = {};
+                            rows[index].values[item.attrcode] = {};
                         }
                     }
         
                     // 因为timepicker的value特殊，所以特殊转换一下start，有问题在看一下
                     if (item.itemtype === 'timepicker') {
                         if (valueChange && valueChange.format) {
-                        valueChange = valueChange.format('hh:mm:ss');
+                            valueChange = valueChange.format('hh:mm:ss');
                         }
                     }
                     // 因为timepicker的value特殊，所以特殊转换一下end
@@ -525,15 +526,15 @@ export default class Cell extends Component {
                         if (isMul) {
                         if (valueChange.length > 0) {
                             valueChange.forEach((one, ind) => {
-                            changedrows.push({
-                                rowid: record.rowid,
-                                newvalue: {
-                                value: _getValue(one) || ''
-                                },
-                                oldvalue: {
-                                value: ind <= 0 ? isRefpk || '' : ''
-                                }
-                            });
+                                changedrows.push({
+                                    rowid: record.rowid,
+                                    newvalue: {
+                                    value: _getValue(one) || ''
+                                    },
+                                    oldvalue: {
+                                    value: ind <= 0 ? isRefpk || '' : ''
+                                    }
+                                });
                             });
                         } else {
                             changedrows.push({
@@ -1384,7 +1385,7 @@ export default class Cell extends Component {
                             </span>
                         ) : (
                             <div className={IType === 'number' ? 'text-left edit-center' : 'edit-center'}>
-                                <Tooltip className="tooltip-word-color" placement="top" delay={1} overlay={tableItemValue}>
+                                <Tooltip inverse className="tooltip-word-color" placement="top" delay={1} overlay={tableItemValue}>
                                     <span className={config.multipleRowCell ? '' : 'single-line-and-ellipsis'}>
                                         {tableItemValue}
                                         &nbsp;
@@ -1406,6 +1407,7 @@ export default class Cell extends Component {
                 // 这里加了一个类名single-line-and-ellipsis， 让注册进来的render的内容也是一行省略的
                 return (
                 <Tooltip
+                    inverse
                     className="tooltip-word-color"
                     placement="top"
                     delay={1}
@@ -1435,7 +1437,7 @@ export default class Cell extends Component {
                     className={'edit-table-browse ' + (config.multipleRowCell ? '' : 'single-line-and-ellipsis')}
                     style={IType === 'number' ? { textAlign: 'right' } : {}}
                 >
-                    <Tooltip className="tooltip-word-color" placement="top" delay={1} overlay={tableItemValue}>
+                    <Tooltip inverse className="tooltip-word-color" placement="top" delay={1} overlay={tableItemValue}>
                     {// 如果模板里有hyperlinkflag:true
                     hyperlinkflag ? (
                         <a

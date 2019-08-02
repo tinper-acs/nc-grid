@@ -9,7 +9,7 @@ import NCTable from './nc_Table';
 import Icon from 'bee-icon';
 import Select from 'bee-select';
 import Cell from './Cell';
-import { isFunction,checkHasIndex,deepClone,isWrong,isObj,typeFormat } from './utils';
+import { isFunction,checkHasIndex,deepClone,isWrong,isObj,typeFormat,isArray } from './utils';
 import sort from 'bee-table/build/lib/sort.js';
 import multiSelect from "bee-table/build/lib/multiSelect.js";
 
@@ -75,7 +75,7 @@ class EditTable extends Component {
         let {data: oldData} = this.props;
         let {data: newData} = nextProps;
         let {table} = this.state;
-        if(newData !== oldData){
+        if(newData !== oldData && newData.length !== oldData.length){
             this.setState({
                 table: Object.assign(...table,{rows: newData})
             })
