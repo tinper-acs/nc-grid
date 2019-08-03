@@ -8,12 +8,12 @@ import React, { Component } from 'react';
 import NCTable from './nc_Table';
 import Icon from 'bee-icon';
 import Select from 'bee-select';
+import Checkbox from 'bee-checkbox';
 import Cell from './Cell';
-import { isFunction,checkHasIndex,deepClone,isWrong,isObj,typeFormat,isArray } from './utils';
+import { isFunction,checkHasIndex,deepClone,isWrong,isObj,typeFormat,isArray,isUndefined } from './utils';
 import sort from 'bee-table/build/lib/sort.js';
 import multiSelect from "bee-table/build/lib/multiSelect.js";
-
-const ComplexTable = sort(NCTable, Icon);
+import CONFIG from './config';
 
 const propTypes = {
     moduleId: PropTypes.string, //meta的id号
@@ -38,6 +38,10 @@ const _DEFAULT = {
 class EditTable extends Component {
     constructor(props) {
         super(props);
+        let ComplexTable = sort(NCTable, Icon);
+        if(typeof props.showCheck === 'boolean' && !!(props.showCheck)) {
+            ComplexTable = multiSelect(ComplexTable, Checkbox);
+        }
         this.state = {
             table: {
                 pageInfo: {
@@ -57,6 +61,7 @@ class EditTable extends Component {
         };
         // 是否获取到多语的标识，让cell正确更新
         this.isGetPlatform = false;
+        this.ComplexTable = ComplexTable;
     }
 
     componentWillMount(){
@@ -89,6 +94,109 @@ class EditTable extends Component {
         getTableRows && getTableRows(rows);
     }
 
+    /**
+     * 新增行(通过index值)
+     * @param  index  增加行的位置index   0为行首 不传为和len为行尾部
+     * @param  data   新增的默认data 格式：{key: {display: '', scale: 0, value: ''}, key2: {display: '', scale: 0, value: ''}}
+     * @param  flag   增加flag标识位，判断是否为多表头，默认是false，不是多表头
+     */
+    addRow = (index, data, autoFocus = true, callback, flag = false, isAutoAddRow) => {
+        // const myCardScope = this.myTable[tableId];
+        // if (addRowControl(isAutoAddRow)) return;
+        // if (typeof tableId == 'string' && myCardScope) {
+            const { table:tableInfo } = this.state;
+            const rows = tableInfo.rows;
+            //根据id获取表格中所有(可见)的行的数量
+            const getVisibleRows = isArray(rows) && rows.filter(item => item.status != CONFIG.status.delete);
+            let len = getVisibleRows.length || 1;
+            let numFlag = isUndefined(index) || (!Number.isNaN(Number.parseInt(index, 10)) && index >= 0 && index <= len);
+            if (numFlag) {
+                index = isUndefined(index) ? len : index;
+                // 当前应该聚焦到的行
+                // setStatus.call(this, tableId, 'edit');
+                // myCardScope.state.status = 'edit';
+                const newRow = {
+                    rowid: String(new Date().getTime()).slice(-5) + Math.random().toString(12),
+                    status: CONFIG.status.add,
+                    values: {}
+                };
+                let sumItems = _sumItemsCode.call(this, tableId, flag);
+                sumItems.forEach(item => {
+                    // hasData 有data，那么走data   无data再看hasInit看是否有初始值
+                    let [code, hasData, hasInit] = [item.attrcode, isObj(data), isObj(item.initialvalue)];
+                    let checkData = hasData && isObj(data[code]);
+                    newRow.values[code] = {
+                        display: checkData ? data[code].display : hasInit ? item.initialvalue.display : null,
+                        scale: checkData ? data[code].scale : hasInit ? item.initialvalue.scale : null,
+                        value: checkData ? data[code].value : hasInit ? item.initialvalue.value : typeFormat(null, item.itemtype)
+                    };
+                });
+                // 规整数据
+                _reviseRows.call(this, rows);
+                rows.splice(index, 0, newRow);
+                myCardTable.focusIndex = -1;
+
+                // 控制增行后的行定位
+                myCardTable.focusIndex = index === 0 ? index : index + 1; //修改tab切换不到新增行问题renyjk
+
+                if (!this.isUpdatePage) {
+                    this.setState({
+                        table: myCardTable
+                    },
+                    () => {
+                        // 给每个控件赋初始值   TODO  好多地方需要这个 比如  reset的时候  TODO
+                        const myCardTable = this.state.table;
+                        // 控制增行定位后将参数至成默认值
+                        myCardTable.focusIndex = -1;
+                        const temp = myCardTable.rows;
+                        temp.map((item, indexx) => {
+                            let vals = item.values;
+                            for (let keys in vals) {
+                                const OldVal = vals[keys] ? vals[keys].value : null;
+                                saveChangedRowsOldValue.call(this, tableId, indexx, keys, OldVal);
+                            }
+                        });
+
+                        callback && typeof callback === 'function' && callback.call(this, tableId, index, myCardTable);
+                    }
+                    );
+                } else {
+                    callback && typeof callback === 'function' && callback.call(this, tableId, index, myCardTable);
+                }
+                return false;
+            }
+            warningOnce(
+            numFlag,
+            '传入的第二个参数为行序号，不传入默认为最后一行，0为行首，否则须为大于等于0且小于等于总行数的整数'
+            );
+            return false;
+        // }
+        warningOnce(false, `所操作的表格中无ID为${tableId}的数据`);
+        return false;
+    }
+
+    delRow = () => {
+        
+    }
+
+    pasteRow = () => {
+        
+    }
+
+    /**
+     * 修正rows  把删除项永远放在最后 （为了保证渲染层与数据层 index的同一性）
+     * @param  rows   表内数据行
+     */
+    _reviseRows(rows) {
+        rows.map((item, index) => {
+            if (item.status == CONFIG.status.delete) {
+                rows.push(item);
+                rows.splice(index, 1);
+            }
+        });
+        return rows;
+    }
+
     /**把index行设置为选中行 */
     focusRowByIndex(index) {
         this.setState({
@@ -108,6 +216,7 @@ class EditTable extends Component {
      * @param {*} isGetPlatform 
      */
     createEditTable(props, edittable_dom, isGetPlatform) {
+        let ComplexTable = this.ComplexTable;
         // 分页显示最多按钮
         const MAX_BUTTONS = 5;
         // 获取table的meta信息 注意异步时候 meta中没有此id 为undefined
@@ -142,8 +251,8 @@ class EditTable extends Component {
             focusIndex = -1
         } = table;
         // 展示在页面上的数据
-        // status: '0'(编辑态)，'1'()，'2'()，'3'()
-        let tablePageData = rows.filter(e => e.status != '3');
+        // status: '0'(原始)，'1'(修改)，'2'(新增)，'3'(已删除)
+        let tablePageData = rows.filter(e => e.status != CONFIG.status.delete);
         // 左侧多选框
         // if (config && config.selectedChange && typeof config.selectedChange === 'function') {
         //     table.selectedChange = config.selectedChange;
@@ -334,8 +443,8 @@ class EditTable extends Component {
         ];
         */}
         // if (config && config.showCheck) {
-        //     // columns = defaultColumns.concat(columns);
-        //     ComplexTable = multiSelect(ComplexTable,Checkbox);
+            // columns = defaultColumns.concat(columns);
+            // ComplexTable = multiSelect(ComplexTable,Checkbox);
         // }
         // if (config && config.showCheck && (config.showTotal || getMetaIsTotal(totalColums)) && json) {
         //     // 合并列增加字段
@@ -453,6 +562,7 @@ class EditTable extends Component {
                     // 是否取消滚动分页
                     lazyload={config.lazyload}
                     {...sort}
+                    {...config}
                     />
                 </div>
         
