@@ -59,7 +59,7 @@ class CardTable extends Component {
         this.editTable.addRow();
     }
     delRow = () => {
-        this.editTable.delRow();
+        this.editTable.delRowByRowId();
     }
     pasteRow = () => {
         this.editTable.pasteRow();

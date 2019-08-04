@@ -56,6 +56,7 @@ class EditTable extends Component {
                 origin: {},
                 operType: 'add',
                 allpks: [], //所有 data 的 id 属性集合
+                selectedList: [], //所有已选 data 的集合
             },
             currentIndex: -1
         };
@@ -101,11 +102,9 @@ class EditTable extends Component {
      * @param  flag   增加flag标识位，判断是否为多表头，默认是false，不是多表头
      */
     addRow = (index, data, autoFocus = true, callback, flag = false, isAutoAddRow) => {
-        // const myCardScope = this.myTable[tableId];
         // if (addRowControl(isAutoAddRow)) return;
-        // if (typeof tableId == 'string' && myCardScope) {
-            const { table:tableInfo } = this.state;
-            const rows = tableInfo.rows;
+            const { table:myCardTable } = this.state;
+            const rows = myCardTable.rows;
             //根据id获取表格中所有(可见)的行的数量
             const getVisibleRows = isArray(rows) && rows.filter(item => item.status != CONFIG.status.delete);
             let len = getVisibleRows.length || 1;
@@ -120,8 +119,19 @@ class EditTable extends Component {
                     status: CONFIG.status.add,
                     values: {}
                 };
-                let sumItems = _sumItemsCode.call(this, tableId, flag);
-                sumItems.forEach(item => {
+                // let sumItems = _sumItemsCode.call(this, tableId, flag);
+                let template = rows.length > 0 && isObj(rows[0].values) && rows[0].values;
+                let sumItems = {}; 
+                Object.keys(template).forEach(function(key){
+                    let item = template[key];
+                    sumItems[key] = {
+                        attrcode: key,
+                        initialvalue: item.initialvalue,
+                        itemtype: item.itemtype
+                    };
+                });
+                Object.keys(sumItems).forEach(key => {
+                    let item = sumItems[key];
                     // hasData 有data，那么走data   无data再看hasInit看是否有初始值
                     let [code, hasData, hasInit] = [item.attrcode, isObj(data), isObj(item.initialvalue)];
                     let checkData = hasData && isObj(data[code]);
@@ -132,53 +142,93 @@ class EditTable extends Component {
                     };
                 });
                 // 规整数据
-                _reviseRows.call(this, rows);
+                this._reviseRows(rows);
                 rows.splice(index, 0, newRow);
                 myCardTable.focusIndex = -1;
+                // console.log('rows',rows)
+                // debugger
 
                 // 控制增行后的行定位
                 myCardTable.focusIndex = index === 0 ? index : index + 1; //修改tab切换不到新增行问题renyjk
-
-                if (!this.isUpdatePage) {
-                    this.setState({
-                        table: myCardTable
+                this.setState({
+                    table: myCardTable
+                })
+            }
+    }
+    /**
+     * 根据rowId的删除行方法
+     * 规则：1、当state == ‘2’    新增        这时候直接删除数组就可以了
+     *      2、当state == ‘0/1’  原始/修改   这时候数组的内容不能删除，把state置位3
+     *      3、当state == ‘3’    已删除      这时候数组的内容不会显示，所以没删除功能
+     * 解决思路： 把不是新增的 置位3 并push到结尾，其余的按index删除即可。 控制index的最大取值。
+     * 注意点：   _selectedChangeFn方法调用
+     * @param  tableId   meta的id号
+     * @param  rowid     删除的行rowId
+     */
+    delRowByRowId = (rowid, callback) => {
+        const { table:myCardTable, selectedList } = this.state;
+        let rows = myCardTable.rows, 
+            selectedPks = [];
+        selectedList.forEach((item) => {
+            selectedPks.push(item.rowid)
+        })
+        if (myCardTable) {
+            if (typeof rowid == 'string') { //删除单行
+                rows.map((item, index) => {
+                    if (item.rowid == rowid) {
+                        let stat = item.status;
+                        if (stat == CONFIG.status.edit || stat == CONFIG.status.origin) {
+                            item.status = CONFIG.status.delete;
+                            rows.push(item);
+                        }
+                        rows.splice(index, 1);
+                        // delChangedRowsOldValue.call(this, tableId, index);
+                        // 删除自动选中到下一个行的逻辑 , 与快捷键的的删除逻辑冲突 by bbqin
+                        if (index >= 0 && index == myCardTable.currentIndex) {
+                            myCardTable.currentIndex = -1;
+                        }
+                    }
+                });
+                this.setState(
+                    {
+                    table: myCardTable
                     },
                     () => {
-                        // 给每个控件赋初始值   TODO  好多地方需要这个 比如  reset的时候  TODO
-                        const myCardTable = this.state.table;
-                        // 控制增行定位后将参数至成默认值
-                        myCardTable.focusIndex = -1;
-                        const temp = myCardTable.rows;
-                        temp.map((item, indexx) => {
-                            let vals = item.values;
-                            for (let keys in vals) {
-                                const OldVal = vals[keys] ? vals[keys].value : null;
-                                saveChangedRowsOldValue.call(this, tableId, indexx, keys, OldVal);
-                            }
-                        });
-
-                        callback && typeof callback === 'function' && callback.call(this, tableId, index, myCardTable);
+                    // _selectedChangeFn.call(this, tableId)
+                    callback &&
+                        typeof callback === 'function' &&
+                        callback.call(this, rowid, myCardTable);
                     }
-                    );
-                } else {
-                    callback && typeof callback === 'function' && callback.call(this, tableId, index, myCardTable);
-                }
-                return false;
+                );
+            } else { //删除多行
+                rows.map((item, index) => {
+                    if (selectedPks.indexOf(item.rowid) > -1) {
+                        let stat = item.status;
+                        if (stat == CONFIG.status.edit || stat == CONFIG.status.origin) {
+                            item.status = CONFIG.status.delete;
+                            rows.push(item);
+                        }
+                        rows.splice(index, 1);
+                        // 删除自动选中到下一个行的逻辑 , 与快捷键的的删除逻辑冲突 by bbqin
+                        if (index >= 0 && index == myCardTable.currentIndex) {
+                            myCardTable.currentIndex = -1;
+                        }
+                    }
+                });
+                console.log('rows',rows);
+                debugger
+                this.setState({
+                    table: myCardTable
+                });
             }
-            warningOnce(
-            numFlag,
-            '传入的第二个参数为行序号，不传入默认为最后一行，0为行首，否则须为大于等于0且小于等于总行数的整数'
-            );
-            return false;
-        // }
-        warningOnce(false, `所操作的表格中无ID为${tableId}的数据`);
-        return false;
+        }
     }
-
-    delRow = () => {
-        
-    }
-
+    /**
+     * 复制粘贴行，默认粘贴到该行下方
+     * @param  tableId   meta的id号
+     * @param  index     行序号index
+     * @param  keys      不去复制的键值
+     */
     pasteRow = () => {
         
     }
@@ -187,7 +237,7 @@ class EditTable extends Component {
      * 修正rows  把删除项永远放在最后 （为了保证渲染层与数据层 index的同一性）
      * @param  rows   表内数据行
      */
-    _reviseRows(rows) {
+    _reviseRows = (rows) => {
         rows.map((item, index) => {
             if (item.status == CONFIG.status.delete) {
                 rows.push(item);
@@ -208,6 +258,27 @@ class EditTable extends Component {
         let data = {record, index};
         // this.table.currentInfo = data;
     }
+    /**
+     * 多选的回调
+     */
+    getSelectedDataFunc = (selectedList,record,index) => {
+        const { table:myCardTable } = this.state;
+        let rows = myCardTable.rows;
+        // 如果在回调中增加setState逻辑，需要同步data中的_checked属性。即下面的代码
+        const allChecked = selectedList.length == 0?false:true;
+        // record为undefind则为全选或者全不选
+        if(!record){
+            rows.forEach(item=>{
+                item._checked = allChecked;
+            })
+        }else{
+            rows[index]['_checked'] = record._checked;
+        } 
+        this.setState({
+            table: myCardTable,
+            selectedList: selectedList
+        })
+    };
 
     /**
      * 创建 EditTable
@@ -543,6 +614,7 @@ class EditTable extends Component {
                     rowClassName={(record, current) => {
                         return table.currentIndex === current ? 'editTable-selected-row' : '';
                     }}
+                    getSelectedDataFunc={this.getSelectedDataFunc}
                     onRowClick={(record, index, e) => {
                         // 行点击操作 1、根据index设置行样式 2、自定义点击事件
                         this.focusRowByIndex(index);
