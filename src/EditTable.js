@@ -79,8 +79,9 @@ class EditTable extends Component {
     }
     //为了回传Table的行数据
     componentDidMount(){
-        let {onRef} = this.props;
-        onRef && onRef(this)
+        let {onRef,parentFoo} = this.props;
+        onRef && onRef(this);
+        parentFoo && parentFoo(this.addRow, this.delRowByRowId ,this.pasteRow);
     }
 
     componentWillReceiveProps(nextProps){

@@ -379,9 +379,12 @@ var EditTable = function (_Component) {
 
 
     EditTable.prototype.componentDidMount = function componentDidMount() {
-        var onRef = this.props.onRef;
+        var _props = this.props,
+            onRef = _props.onRef,
+            parentFoo = _props.parentFoo;
 
         onRef && onRef(this);
+        parentFoo && parentFoo(this.addRow, this.delRowByRowId, this.pasteRow);
     };
 
     EditTable.prototype.componentWillReceiveProps = function componentWillReceiveProps(nextProps) {

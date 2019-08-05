@@ -82,21 +82,21 @@ var CardTable = function (_Component) {
         };
 
         _this.addRow = function () {
-            var moduleId = _this.props.moduleId;
-
-            _this[moduleId].addRow();
+            _this.addRowFoo();
         };
 
         _this.delRow = function () {
-            var moduleId = _this.props.moduleId;
-
-            _this[moduleId].delRowByRowId();
+            _this.delRowFoo();
         };
 
         _this.pasteRow = function () {
-            var moduleId = _this.props.moduleId;
+            _this.pasteRowFoo();
+        };
 
-            _this[moduleId].pasteRow();
+        _this.parentFoo = function (addRow, delRow, pasteRow) {
+            _this.addRowFoo = addRow;
+            _this.delRowFoo = delRow;
+            _this.pasteRowFoo = pasteRow;
         };
 
         _this.getSelectedDataFunc = function (selectedList) {
@@ -113,6 +113,9 @@ var CardTable = function (_Component) {
             isMaximized: false, //是否最大化显示
             selectedList: [] //已勾选的行数据集合
         };
+        _this.addRowFoo = function () {};
+        _this.delRowFoo = function () {};
+        _this.pasteRowFoo = function () {};
         return _this;
     }
 
@@ -173,11 +176,10 @@ var CardTable = function (_Component) {
                         columns: columns,
                         data: dataRows,
                         moduleId: moduleId,
-                        isEdit: isEdit,
-                        onRef: function onRef(ref) {
-                            self[moduleId] = ref;
-                        } //获取EditTable组件实例
-                        , getSelectedDataFunc: _this2.getSelectedDataFunc
+                        isEdit: isEdit
+                        // onRef={(ref) => { self[moduleId] = ref }} //获取EditTable组件实例
+                        , getSelectedDataFunc: _this2.getSelectedDataFunc,
+                        parentFoo: _this2.parentFoo
                     }));
                 }
             };

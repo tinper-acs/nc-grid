@@ -34,6 +34,9 @@ class CardTable extends Component {
             isMaximized: false, //是否最大化显示
             selectedList: [], //已勾选的行数据集合
         }
+        this.addRowFoo = () => {}
+        this.delRowFoo = () => {}
+        this.pasteRowFoo = () => {}
     }
 
     //activeKey 改变时触发的回调
@@ -58,16 +61,19 @@ class CardTable extends Component {
     }
     //调用editTable实例中的方法
     addRow = () => {
-        let {moduleId} = this.props;
-        this[moduleId].addRow();
+        this.addRowFoo();
     }
     delRow = () => {
-        let {moduleId} = this.props;
-        this[moduleId].delRowByRowId();
+        this.delRowFoo();
     }
     pasteRow = () => {
-        let {moduleId} = this.props;
-        this[moduleId].pasteRow();
+        this.pasteRowFoo();
+    }
+    
+    parentFoo = (addRow, delRow ,pasteRow) => {
+        this.addRowFoo = addRow;
+        this.delRowFoo = delRow;
+        this.pasteRowFoo = pasteRow;
     }
     /**
      * 勾选表行时触发的回调
@@ -111,8 +117,9 @@ class CardTable extends Component {
                     data={dataRows}
                     moduleId={moduleId}
                     isEdit={isEdit}
-                    onRef={(ref) => { self[moduleId] = ref }} //获取EditTable组件实例
+                    // onRef={(ref) => { self[moduleId] = ref }} //获取EditTable组件实例
                     getSelectedDataFunc={this.getSelectedDataFunc}
+                    parentFoo={this.parentFoo}
                     />
                 )
             };
