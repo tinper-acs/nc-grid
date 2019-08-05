@@ -339,6 +339,13 @@ const tabLists = [{
 }];
   
 class Demo2 extends Component {
+    handleClick = () => {
+        this.body.getTableRows();
+    }
+    //获取表格数据时返回的回调
+    getTableRows = (data) => {
+        console.log('保存数据',data);
+    }
     render () {
         const tableHead = [{
             bordered:true,
@@ -357,18 +364,23 @@ class Demo2 extends Component {
             ]
         }]
         return (
-            <CardTable
-            columns={columns}
-            data={data}
-            moduleId="body"
-            tabLists={tabLists}
-            showMore={true}
-            showMax={true}
-            showCheck= {true} //是否开启多选功能
-            hideSwitch= {() => false} //表格
-            tableHead={tableHead}
-            isEdit={true}
-            />
+            <div>
+                <CardTable
+                columns={columns}
+                data={data}
+                moduleId="body"
+                tabLists={tabLists}
+                showMore={true}
+                showMax={true}
+                showCheck= {true} //是否开启多选功能
+                hideSwitch= {() => false} //表格
+                tableHead={tableHead}
+                isEdit={true}
+                // onRef={(ref) => { this.body = ref; }} //获取EditTable组件实例
+                />
+                <button onClick={this.handleClick} style={{marginTop:'30px'}}>aaa</button>
+            </div>
+            
         )
     }
 }
