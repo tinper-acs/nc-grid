@@ -100379,11 +100379,10 @@
 	                    };
 	                });
 	                // 规整数据
-	                _this._reviseRows(rows);
+	                _this._reviseRows(rows, 'add');
 	                rows.splice(index, 0, newRow);
 	                myCardTable.focusIndex = -1;
 	                // console.log('rows',rows)
-	                // debugger
 	
 	                // 控制增行后的行定位
 	                myCardTable.focusIndex = index === 0 ? index : index + 1; //修改tab切换不到新增行问题renyjk
@@ -100443,8 +100442,8 @@
 	                        }
 	                    });
 	                    // 规整数据
-	                    _this._reviseRows(rows);
-	                    console.log('删除后rows: ', rows);
+	                    _this._reviseRows(rows, 'delete');
+	                    // console.log('删除后rows: ',rows);
 	                    _this.setState({
 	                        table: myCardTable
 	                    });
@@ -100459,8 +100458,13 @@
 	                selectedList = _this$state2$selected === undefined ? [] : _this$state2$selected;
 	
 	            var rows = myCardTable.rows,
-	                allpks = myCardTable.allpks,
-	                selectedIndexs = [];
+	                selectedIndexs = [],
+	                allpks = [];
+	            rows.forEach(function (item) {
+	                if (allpks.indexOf(item.rowid) < 0) {
+	                    allpks.push(item.rowid);
+	                }
+	            });
 	            selectedList.forEach(function (item) {
 	                var index = allpks.indexOf(item.rowid);
 	                selectedIndexs.push(index);
@@ -100498,8 +100502,6 @@
 	                // const OldVal = values[value] ? values[value].value : null;
 	                // saveChangedRowsOldValue.call(this, tableId, pasteIndex, value, OldVal);
 	                // });
-	                console.log('rows', rows);
-	                debugger;
 	                _this.setState({
 	                    table: myCardTable
 	                });
@@ -100527,12 +100529,13 @@
 	            });
 	        };
 	
-	        _this._reviseRows = function (rows) {
+	        _this._reviseRows = function (rows, operation) {
 	            rows.map(function (item, index) {
 	                if (item.status == _config2['default'].status['delete']) {
 	                    rows.push(item);
 	                    rows.splice(index, 1);
-	                } else if (item.status == _config2['default'].status.add) {
+	                }
+	                if (operation === 'delete' && item.status == _config2['default'].status.add) {
 	                    rows.splice(index, 1);
 	                }
 	            });
@@ -100590,14 +100593,10 @@
 	    }
 	
 	    EditTable.prototype.componentWillMount = function componentWillMount() {
-	        var data = this.props.data,
-	            allpks = [];
+	        var data = this.props.data;
 	
-	        data.forEach(function (item) {
-	            allpks.push(item.rowid);
-	        });
 	        this.setState({
-	            table: _extends({}, this.state.table, { rows: data, allpks: allpks })
+	            table: _extends({}, this.state.table, { rows: data })
 	        });
 	    };
 	    //为了回传Table的行数据
@@ -100663,6 +100662,7 @@
 	    /**
 	     * 修正rows  把删除项永远放在最后 （为了保证渲染层与数据层 index的同一性）
 	     * @param  rows   表内数据行
+	     * @param  operation  数据操作：add、delete、paste
 	     */
 	
 	
@@ -101960,7 +101960,7 @@
 	        if (!isArr || isArr && !(0, _utils.isObj)(this.tableChangedRowsOldValue[moduleId][index])) {
 	            return null;
 	        }
-	        return this.tableChangedRowsOldValue[moduleId][index][attrcode] || null;
+	        // return this.tableChangedRowsOldValue[moduleId][index][attrcode] || null;
 	    };
 	
 	    // 删除旧值函数
@@ -102340,7 +102340,7 @@
 	                                });
 	                            }
 	                            var OldVal = isMul ? valueChange.length > 0 ? valueChange[0] : null : item.itemtype === 'refer' ? foolValue.vlaue == '' ? null : foolValue.vlaue : valueChange;
-	                            _this3.saveChangedRowsOldValue.call(_this3, moduleId, index, item.attrcode, OldVal);
+	                            // this.saveChangedRowsOldValue.call(this, moduleId, index, item.attrcode, OldVal);
 	                        }
 	                    },
 	                    onOpenChange: function onOpenChange(val) {
@@ -102609,7 +102609,7 @@
 	                                        value: oldValue ? item.itemtype === 'number' ? (0, _utils.formatAcuracy)(oldValue, scaleData) : oldValue : ''
 	                                    }
 	                                });
-	                                _this3.saveChangedRowsOldValue.call(_this3, moduleId, index, item.attrcode, val);
+	                                // this.saveChangedRowsOldValue.call(this, moduleId, index, item.attrcode, val);
 	                                if (item.itemtype === 'residtxt') {
 	                                    if (model == 'open') {
 	                                        // 当侧拉的情况下

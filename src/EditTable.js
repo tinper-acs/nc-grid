@@ -68,13 +68,9 @@ class EditTable extends Component {
     }
 
     componentWillMount(){
-        let {data} = this.props,
-            allpks = [];
-        data.forEach((item)=>{
-            allpks.push(item.rowid);
-        })
+        let {data} = this.props;
         this.setState({ 
-            table: { ...this.state.table, rows: data, allpks: allpks } 
+            table: { ...this.state.table, rows: data } 
         });
     }
     //为了回传Table的行数据
@@ -90,7 +86,7 @@ class EditTable extends Component {
         let {table} = this.state;
         if(newData !== oldData && newData.length !== oldData.length){
             this.setState({
-                table: Object.assign(...table,{rows: newData})
+                table: Object.assign(...table, {rows: newData})
             })
         }
     }
@@ -149,11 +145,10 @@ class EditTable extends Component {
                     };
                 });
                 // 规整数据
-                this._reviseRows(rows);
+                this._reviseRows(rows, 'add');
                 rows.splice(index, 0, newRow);
                 myCardTable.focusIndex = -1;
                 // console.log('rows',rows)
-                // debugger
 
                 // 控制增行后的行定位
                 myCardTable.focusIndex = index === 0 ? index : index + 1; //修改tab切换不到新增行问题renyjk
@@ -216,8 +211,8 @@ class EditTable extends Component {
                     }
                 });
                 // 规整数据
-                this._reviseRows(rows);
-                console.log('删除后rows: ',rows);
+                this._reviseRows(rows, 'delete');
+                // console.log('删除后rows: ',rows);
                 this.setState({
                     table: myCardTable
                 });
@@ -233,8 +228,13 @@ class EditTable extends Component {
     pasteRow = (index, keys) => {
         let { table:myCardTable, selectedList = [] } = this.state;
         let rows = myCardTable.rows,
-            allpks = myCardTable.allpks,
-            selectedIndexs = [];
+            selectedIndexs = [],
+            allpks = [];
+        rows.forEach((item)=>{
+            if(allpks.indexOf(item.rowid) < 0){
+                allpks.push(item.rowid);
+            }
+        })
         selectedList.forEach((item) => {
             let index = allpks.indexOf(item.rowid);
             selectedIndexs.push(index)
@@ -270,8 +270,6 @@ class EditTable extends Component {
                 // const OldVal = values[value] ? values[value].value : null;
                 // saveChangedRowsOldValue.call(this, tableId, pasteIndex, value, OldVal);
             // });
-            console.log('rows',rows);
-            debugger
             this.setState({
                 table: myCardTable
             });
@@ -305,13 +303,15 @@ class EditTable extends Component {
     /**
      * 修正rows  把删除项永远放在最后 （为了保证渲染层与数据层 index的同一性）
      * @param  rows   表内数据行
+     * @param  operation  数据操作：add、delete、paste
      */
-    _reviseRows = (rows) => {
+    _reviseRows = (rows, operation) => {
         rows.map((item, index) => {
             if (item.status == CONFIG.status.delete) {
                 rows.push(item);
                 rows.splice(index, 1);
-            }else if(item.status == CONFIG.status.add) {
+            }
+            if(operation === 'delete' && item.status == CONFIG.status.add) {
                 rows.splice(index, 1);
             }
         });
